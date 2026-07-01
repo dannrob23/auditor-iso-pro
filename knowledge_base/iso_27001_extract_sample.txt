@@ -1,0 +1,16 @@
+ISO/IEC 27001:2022 - Extracto de prueba para RAG
+
+A.5.1 Políticas para la seguridad de la información
+La dirección debe definir un conjunto de políticas para la seguridad de la información, que deben ser aprobadas por la dirección, publicadas y comunicadas a los empleados y partes interesadas pertinentes. Estas políticas deben ser revisadas a intervalos planificados o si ocurren cambios significativos, para asegurar su idoneidad, adecuación y eficacia continuas.
+
+A.5.9 Inventario de información y otros activos asociados
+Se debe desarrollar y mantener un inventario de la información y de los activos asociados, incluidos sus propietarios. El inventario debe documentar, como mínimo: nombre del activo, propietario del activo, ubicación, clasificación y valor.
+
+A.5.15 Control de acceso
+Las reglas para el control del acceso físico y lógico a la información y a los otros activos asociados se deben establecer y documentar basándose en las necesidades del negocio y en los requisitos de seguridad de la información. Se debe aplicar el principio del privilegio mínimo.
+
+A.6.3 Concienciación, educación y formación en seguridad de la información
+Los empleados de la organización y las partes interesadas pertinentes deben recibir la concienciación, educación y formación adecuadas, así como actualizaciones periódicas de las políticas y procedimientos de la organización relevantes para su función.
+
+A.8.8 Gestión de vulnerabilidades técnicas
+Se debe obtener información oportuna sobre las vulnerabilidades técnicas de los sistemas de información utilizados. Se debe evaluar la exposición de la organización a dichas vulnerabilidades y se deben tomar las medidas oportunas (como el parcheo) para abordar el riesgo asociado.

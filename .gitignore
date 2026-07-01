@@ -1,0 +1,44 @@
+# Environment variables - NEVER upload these
+.env
+
+# Audit logs - sensitive data, keep local
+logs/
+
+# Python virtual environments
+venv/
+source/
+env/
+.venv/
+
+# Streamlit cache
+.streamlit/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Lock files
+.*.lock
+*.lock
+
+# Duplicate project folder
+auditor-iso-pro/
