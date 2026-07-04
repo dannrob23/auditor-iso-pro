@@ -7,7 +7,7 @@ Aplicación web para realizar Gap Analysis automatizados sobre políticas de seg
 - 🔒 **Autenticación segura** con `streamlit-authenticator`
 - 📄 **Análisis de PDFs** — sube tu política y extrae el texto automáticamente
 - ✏️ **Texto libre** — pega el texto directamente
-- 🤖 **IA auditora** — DeepSeek como motor principal, con soporte para OpenAI y Google Gemini
+- 🤖 **IA auditora** — DeepSeek como motor principal, con soporte para Groq, OpenAI y Google Gemini
 - 📊 **Tabla de Gap Analysis** con estado de evidencia y acciones correctivas
 - ⬇️ **Descarga el reporte** en formato Markdown o PDF
 
@@ -55,6 +55,7 @@ python -c "import streamlit_authenticator as sa; print(sa.Hasher(['TuContraseña
 | Proveedor | Modelos | Notas |
 |-----------|---------|-------|
 | **DeepSeek** (por defecto) | deepseek-chat, deepseek-coder | Motor principal, requiere API key de pago |
+| **Groq (Gratis)** | llama-3.3-70b, mixtral | Alternativa gratuita y rápida |
 | OpenAI | gpt-4o, gpt-4-turbo | Requiere API key |
 | Google (Gemini) | gemini-1.5-pro, gemini-1.5-flash | Requiere API key |
 
@@ -73,6 +74,9 @@ streamlit run app.py
 ```toml
 # DeepSeek (motor principal)
 DEEPSEEK_API_KEY = "sk-..."
+
+# Groq (opcional, fallback rápido y gratuito)
+GROQ_API_KEY = "gsk_..."
 
 # Cookie secret para autenticación (genera uno aleatorio)
 COOKIE_SECRET = "un-string-secreto-aleatorio"

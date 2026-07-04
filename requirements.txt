@@ -17,3 +17,4 @@ openpyxl
 schedule
 pyyaml
 google-genai
+groq
