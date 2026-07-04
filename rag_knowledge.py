@@ -81,13 +81,25 @@ def _cargar_documento(archivo: Path):
     return []
 
 def _crear_indice(documentos, destino: Path):
+    if not documentos:
+        return 0
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
         length_function=len,
     )
     chunks = text_splitter.split_documents(documentos)
-    vectorstore = FAISS.from_documents(chunks, get_embeddings())
+    if not chunks:
+        return 0
+    try:
+        embeddings = get_embeddings()
+        if embeddings is None:
+            return 0
+        textos = [chunk.page_content for chunk in chunks]
+        metadatas = [chunk.metadata for chunk in chunks]
+        vectorstore = FAISS.from_texts(textos, embeddings, metadatas=metadatas)
+    except Exception:
+        return 0
     if destino.exists():
         shutil.rmtree(destino)
     vectorstore.save_local(str(destino))

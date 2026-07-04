@@ -810,20 +810,29 @@ if opcion_menu == "📚 Base RAG":
     with col_up1:
         if st.button("🔄 Indexar uploads", key="btn_indexar_uploads"):
             with st.spinner("Indexando documentos temporales..."):
-                num_chunks, msg = indexar_documentos_temporales()
-                if num_chunks > 0:
-                    st.success(msg)
-                else:
-                    st.warning(msg)
+                try:
+                    num_chunks, msg = indexar_documentos_temporales()
+                    if num_chunks > 0:
+                        st.success(msg)
+                    else:
+                        st.warning(msg)
+                except Exception as e:
+                    st.error(f"No se pudo indexar uploads en este entorno: {e}")
     with col_up2:
         if st.button("🧹 Limpiar uploads", key="btn_limpiar_uploads"):
-            limpiar_uploads()
-            st.success("Uploads temporales eliminados.")
-            st.rerun()
+            try:
+                limpiar_uploads()
+                st.success("Uploads temporales eliminados.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"No se pudo limpiar uploads: {e}")
     with col_up3:
-        if base_uploads_activa():
-            st.markdown("**Uploads activos:** ✅")
-        else:
+        try:
+            if base_uploads_activa():
+                st.markdown("**Uploads activos:** ✅")
+            else:
+                st.markdown("**Uploads activos:** —")
+        except Exception:
             st.markdown("**Uploads activos:** —")
     st.info("💡 **Cómo funciona:** El sistema busca en el 'Marco de Gobernanza' (NIST/ISO42001) y en los estándares de ciberseguridad (ISO27001) para anclar la evaluación a requisitos reales de infraestructura crítica.")
     st.markdown("</div>", unsafe_allow_html=True)
