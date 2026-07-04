@@ -8,12 +8,15 @@ import os
 import shutil
 from pathlib import Path
 
-import torchvision  # must be imported before transformers
-
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
+try:
+    import torchvision  # must be imported before transformers
+    from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from langchain_community.vectorstores import FAISS
+    from langchain_huggingface import HuggingFaceEmbeddings
+    _RAG_AVAILABLE = True
+except Exception:
+    _RAG_AVAILABLE = False
 
 KB_DIR = Path("knowledge_base")
 DB_DIR = Path("data/faiss_index")
