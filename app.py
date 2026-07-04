@@ -84,8 +84,35 @@ def ahora_bogota():
     return datetime.now(timezone.utc) + BOGOTA_OFFSET
 
 init_db()
-
 load_dotenv()
+
+def _obtener_kb_dir():
+    return Path("knowledge_base")
+
+def _auto_descargar_fuentes():
+    kb = _obtener_kb_dir()
+    if kb.exists() and any(kb.glob("*.pdf")):
+        return
+    url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
+    try:
+        import requests
+    except Exception:
+        return
+    try:
+        with st.spinner("Descargando fuentes oficiales de GitHub Releases..."):
+            r = requests.get(url, timeout=120)
+            if r.status_code == 200:
+                import zipfile, io
+                kb.mkdir(exist_ok=True)
+                with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                    for member in z.namelist():
+                        if member.endswith(".pdf"):
+                            target = kb / member.split("/")[-1]
+                            target.write_bytes(z.read(member))
+    except Exception:
+        pass
+
+_auto_descargar_fuentes()
 
 # ── Configuración de página ──────────────────────────────────────────────────
 st.set_page_config(
