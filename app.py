@@ -986,30 +986,114 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
                     md = generar_reporte_markdown(aud, ctrls if isinstance(ctrls, list) else [],
                                                   plan, aud.get("nombre_empresa", ""),
                                                   aud.get("sector", ""), aud.get("tamano_empresa", ""))
-                    st.download_button("⬇️ Descargar (.md)", data=md,
+                    st.download_button("⬇️ (.md)", data=md,
                                        file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.md",
                                        mime="text/markdown")
                     from pdf_export import generar_pdf
                     pdf_bytes = generar_pdf(md, "Plan Implementación", usuario, "", "ISO 27002", {"cumplimiento_pct": pct})
-                    st.download_button("📄 Descargar PDF", data=pdf_bytes,
+                    st.download_button("📄 PDF", data=pdf_bytes,
                                        file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.pdf",
                                        mime="application/pdf")
+                    import io, openpyxl
+                    wb = openpyxl.Workbook()
+                    ws = wb.active
+                    ws.title = "Plan Implementación"
+                    ws.append(["Plan de Implementación ISO 27002"])
+                    ws.append([])
+                    ws.append(["Empresa", aud.get("nombre_empresa", "")])
+                    ws.append(["Sector", aud.get("sector", "")])
+                    ws.append(["Tamaño", aud.get("tamano_empresa", "")])
+                    ws.append([])
+                    ws.append(["Resumen"])
+                    ws.append(["Total controles", plan.get("total_controles", 0)])
+                    ws.append(["Alta prioridad", plan.get("alta_prioridad", 0)])
+                    ws.append(["Media prioridad", plan.get("media_prioridad", 0)])
+                    ws.append(["Baja prioridad", plan.get("baja_prioridad", 0)])
+                    ws.append([])
+                    ws.append(["Fases de Implementación"])
+                    for fase in plan.get("fases", []):
+                        ws.append([fase.get("fase", "")])
+                        ws.append(["Control", "Nombre", "Prioridad", "Tiempo", "Responsable"])
+                        for item in fase.get("controles", []):
+                            ws.append([
+                                item.get("id", ""),
+                                item.get("nombre", ""),
+                                item.get("prioridad", ""),
+                                item.get("tiempo_estimado", ""),
+                                item.get("responsable_sugerido", "TI"),
+                            ])
+                        ws.append([])
+                    bus = io.BytesIO()
+                    wb.save(bus)
+                    bus.seek(0)
+                    st.download_button("📊 Excel", data=bus,
+                                       file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.xlsx",
+                                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
                 # ── Descargar plantilla de informe profesional ─────────────────
                 st.markdown("---")
                 st.markdown("### 📑 Plantilla de Informe de Auditoría")
-                st.caption("Descarga una plantilla Markdown reutilizable para informes de auditoría ISO 27001.")
-                if st.button("📝 Descargar plantilla (.md)", key="btn_plantilla"):
-                    from pdf_export import generar_plantilla_informe_markdown
-                    plantilla = generar_plantilla_informe_markdown(
-                        aud.get("nombre_empresa", ""),
-                        aud.get("sector", ""),
-                        aud.get("tamano_empresa", ""),
-                        usuario, "", "ISO 27002",
-                    )
-                    st.download_button("⬇️ Plantilla .md", data=plantilla,
-                                       file_name="plantilla_informe_auditoria_iso27001.md", mime="text/markdown",
-                                       key="dl_plantilla")
+                st.caption("Descarga una plantilla reutilizable para informes de auditoría ISO 27001.")
+                col_md_t, col_xl_t = st.columns(2)
+                with col_md_t:
+                    if st.button("📝 Plantilla (.md)", key="btn_plantilla"):
+                        from pdf_export import generar_plantilla_informe_markdown
+                        plantilla = generar_plantilla_informe_markdown(
+                            aud.get("nombre_empresa", ""),
+                            aud.get("sector", ""),
+                            aud.get("tamano_empresa", ""),
+                            usuario, "", "ISO 27002",
+                        )
+                        st.download_button("⬇️ .md", data=plantilla,
+                                           file_name="plantilla_informe_auditoria_iso27001.md", mime="text/markdown",
+                                           key="dl_plantilla")
+                with col_xl_t:
+                    if st.button("📊 Plantilla (.xlsx)", key="btn_plantilla_xl"):
+                        import io, openpyxl
+                        wb = openpyxl.Workbook()
+                        ws = wb.active
+                        ws.title = "Informe Auditoría"
+                        ws.append(["INFORME DE AUDITORÍA ISO/IEC 27001:2022"])
+                        ws.append([])
+                        ws.append(["1. Información General"])
+                        ws.append(["Organización", aud.get("nombre_empresa", "")])
+                        ws.append(["Sector", aud.get("sector", "")])
+                        ws.append(["Tamaño", aud.get("tamano_empresa", "")])
+                        ws.append(["Auditor", usuario])
+                        ws.append(["Fecha", __import__("datetime").datetime.now().strftime("%d/%m/%Y")])
+                        ws.append([])
+                        ws.append(["2. Controles Recomendados"])
+                        ws.append(["Control", "Nombre", "Prioridad", "Tiempo", "Responsable", "Estado"])
+                        for c in ctrls:
+                            ws.append([
+                                c.get("id", ""),
+                                c.get("nombre", ""),
+                                c.get("prioridad", ""),
+                                c.get("tiempo_estimado", ""),
+                                c.get("responsable_sugerido", ""),
+                                c.get("estado", "pendiente"),
+                            ])
+                        ws.append([])
+                        ws.append(["3. Plan de Implementación"])
+                        for fase in plan.get("fases", []):
+                            ws.append([fase.get("fase", "")])
+                            ws.append(["Control", "Nombre", "Prioridad", "Tiempo", "Responsable"])
+                            for item in fase.get("controles", []):
+                                ws.append([
+                                    item.get("id", ""),
+                                    item.get("nombre", ""),
+                                    item.get("prioridad", ""),
+                                    item.get("tiempo_estimado", ""),
+                                    item.get("responsable_sugerido", "TI"),
+                                ])
+                            ws.append([])
+                        buf = io.BytesIO()
+                        wb.save(buf)
+                        buf.seek(0)
+                        st.download_button("⬇️ .xlsx", data=buf,
+                                           file_name=f"plantilla_informe_{aud.get('nombre_empresa', 'empresa')}.xlsx",
+                                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                           key="dl_plantilla_xl")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
