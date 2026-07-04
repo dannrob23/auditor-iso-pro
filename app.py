@@ -995,34 +995,92 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
                                        file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.pdf",
                                        mime="application/pdf")
                     import io, openpyxl
+                    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                    font_family = "Arial"
+                    thin_border = Border(
+                        left=Side(style="thin", color="CCCCCC"),
+                        right=Side(style="thin", color="CCCCCC"),
+                        top=Side(style="thin", color="CCCCCC"),
+                        bottom=Side(style="thin", color="CCCCCC"),
+                    )
+                    purple_fill = PatternFill(start_color="1A1A2E", end_color="1A1A2E", fill_type="solid")
+                    white_font = Font(name=font_family, bold=True, color="FFFFFF", size=11)
+                    header_fill = PatternFill(start_color="16213E", end_color="16213E", fill_type="solid")
+                    alt_fill = PatternFill(start_color="F3F0FF", end_color="F3F0FF", fill_type="solid")
+
                     wb = openpyxl.Workbook()
                     ws = wb.active
                     ws.title = "Plan Implementación"
-                    ws.append(["Plan de Implementación ISO 27002"])
-                    ws.append([])
-                    ws.append(["Empresa", aud.get("nombre_empresa", "")])
-                    ws.append(["Sector", aud.get("sector", "")])
-                    ws.append(["Tamaño", aud.get("tamano_empresa", "")])
-                    ws.append([])
-                    ws.append(["Resumen"])
-                    ws.append(["Total controles", plan.get("total_controles", 0)])
-                    ws.append(["Alta prioridad", plan.get("alta_prioridad", 0)])
-                    ws.append(["Media prioridad", plan.get("media_prioridad", 0)])
-                    ws.append(["Baja prioridad", plan.get("baja_prioridad", 0)])
-                    ws.append([])
-                    ws.append(["Fases de Implementación"])
+
+                    # ── Portada / Título ──────────────────────────────────────────
+                    ws.merge_cells("A1:E1")
+                    ws["A1"] = "PLAN DE IMPLEMENTACIÓN ISO 27002"
+                    ws["A1"].font = Font(name=font_family, size=16, bold=True, color="FFFFFF")
+                    ws["A1"].fill = purple_fill
+                    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+                    ws.row_dimensions[1].height = 40
+
+                    # ── Metadatos ─────────────────────────────────────────────────
+                    row = 3
+                    ws.cell(row=row, column=1, value="Empresa:").font = Font(name=font_family, bold=True, size=10)
+                    ws.cell(row=row, column=2, value=aud.get("nombre_empresa", "")).font = Font(name=font_family, size=10)
+                    row += 1
+                    ws.cell(row=row, column=1, value="Sector:").font = Font(name=font_family, bold=True, size=10)
+                    ws.cell(row=row, column=2, value=aud.get("sector", "")).font = Font(name=font_family, size=10)
+                    row += 1
+                    ws.cell(row=row, column=1, value="Tamaño:").font = Font(name=font_family, bold=True, size=10)
+                    ws.cell(row=row, column=2, value=aud.get("tamano_empresa", "")).font = Font(name=font_family, size=10)
+
+                    # ── Resumen ────────────────────────────────────────────────────
+                    row += 2
+                    ws.cell(row=row, column=1, value="RESUMEN").font = Font(name=font_family, size=12, bold=True, color="FFFFFF")
+                    ws.cell(row=row, column=1).fill = purple_fill
+                    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+                    for c in range(1, 6):
+                        ws.cell(row=row, column=c).fill = purple_fill
+                    row += 1
+                    for label, key in [("Total controles", "total_controles"), ("Alta prioridad", "alta_prioridad"),
+                                       ("Media prioridad", "media_prioridad"), ("Baja prioridad", "baja_prioridad")]:
+                        ws.cell(row=row, column=1, value=label).font = Font(name=font_family, bold=True, size=10)
+                        ws.cell(row=row, column=2, value=plan.get(key, 0)).font = Font(name=font_family, size=10)
+                        ws.cell(row=row, column=2).alignment = Alignment(horizontal="center")
+                        row += 1
+
+                    # ── Fases ─────────────────────────────────────────────────────
+                    row += 1
                     for fase in plan.get("fases", []):
-                        ws.append([fase.get("fase", "")])
-                        ws.append(["Control", "Nombre", "Prioridad", "Tiempo", "Responsable"])
-                        for item in fase.get("controles", []):
-                            ws.append([
-                                item.get("id", ""),
-                                item.get("nombre", ""),
-                                item.get("prioridad", ""),
-                                item.get("tiempo_estimado", ""),
-                                item.get("responsable_sugerido", "TI"),
-                            ])
-                        ws.append([])
+                        ws.cell(row=row, column=1, value=fase.get("fase", "")).font = Font(name=font_family, size=11, bold=True, color="FFFFFF")
+                        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=5)
+                        for c in range(1, 6):
+                            ws.cell(row=row, column=c).fill = header_fill
+                        row += 1
+                        headers = ["Control", "Nombre", "Prioridad", "Tiempo", "Responsable"]
+                        for ci, h in enumerate(headers, 1):
+                            cell = ws.cell(row=row, column=ci, value=h)
+                            cell.font = Font(name=font_family, bold=True, color="FFFFFF", size=9)
+                            cell.fill = PatternFill(start_color="0F3460", end_color="0F3460", fill_type="solid")
+                            cell.border = thin_border
+                            cell.alignment = Alignment(horizontal="center", vertical="center")
+                        row += 1
+                        for idx, item in enumerate(fase.get("controles", [])):
+                            for ci, key in enumerate(["id", "nombre", "prioridad", "tiempo_estimado", "responsable_sugerido"], 1):
+                                val = item.get(key, "TI") if key != "responsable_sugerido" else item.get("responsable_sugerido", "TI")
+                                cell = ws.cell(row=row, column=ci, value=val)
+                                cell.font = Font(name=font_family, size=9)
+                                cell.border = thin_border
+                                if idx % 2 == 1:
+                                    cell.fill = alt_fill
+                            ws.row_dimensions[row].height = 20
+                            row += 1
+                        row += 1
+
+                    # ── Ancho de columnas ─────────────────────────────────────────
+                    ws.column_dimensions["A"].width = 18
+                    ws.column_dimensions["B"].width = 35
+                    ws.column_dimensions["C"].width = 14
+                    ws.column_dimensions["D"].width = 16
+                    ws.column_dimensions["E"].width = 22
+
                     bus = io.BytesIO()
                     wb.save(bus)
                     bus.seek(0)
@@ -1050,43 +1108,97 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
                 with col_xl_t:
                     if st.button("📊 Plantilla (.xlsx)", key="btn_plantilla_xl"):
                         import io, openpyxl
+                        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                        font_family = "Arial"
+                        thin_border = Border(
+                            left=Side(style="thin", color="CCCCCC"),
+                            right=Side(style="thin", color="CCCCCC"),
+                            top=Side(style="thin", color="CCCCCC"),
+                            bottom=Side(style="thin", color="CCCCCC"),
+                        )
+                        purple_fill = PatternFill(start_color="1A1A2E", end_color="1A1A2E", fill_type="solid")
+                        header_fill = PatternFill(start_color="16213E", end_color="16213E", fill_type="solid")
+                        alt_fill = PatternFill(start_color="F3F0FF", end_color="F3F0FF", fill_type="solid")
+
                         wb = openpyxl.Workbook()
                         ws = wb.active
-                        ws.title = "Informe Auditoría"
-                        ws.append(["INFORME DE AUDITORÍA ISO/IEC 27001:2022"])
-                        ws.append([])
-                        ws.append(["1. Información General"])
-                        ws.append(["Organización", aud.get("nombre_empresa", "")])
-                        ws.append(["Sector", aud.get("sector", "")])
-                        ws.append(["Tamaño", aud.get("tamano_empresa", "")])
-                        ws.append(["Auditor", usuario])
-                        ws.append(["Fecha", __import__("datetime").datetime.now().strftime("%d/%m/%Y")])
-                        ws.append([])
-                        ws.append(["2. Controles Recomendados"])
-                        ws.append(["Control", "Nombre", "Prioridad", "Tiempo", "Responsable", "Estado"])
-                        for c in ctrls:
-                            ws.append([
-                                c.get("id", ""),
-                                c.get("nombre", ""),
-                                c.get("prioridad", ""),
-                                c.get("tiempo_estimado", ""),
-                                c.get("responsable_sugerido", ""),
-                                c.get("estado", "pendiente"),
-                            ])
-                        ws.append([])
-                        ws.append(["3. Plan de Implementación"])
+                        ws.title = "Plantilla Informe"
+
+                        ws.merge_cells("A1:F1")
+                        ws["A1"] = "PLANTILLA INFORME DE AUDITORÍA ISO/IEC 27001:2022"
+                        ws["A1"].font = Font(name=font_family, size=14, bold=True, color="FFFFFF")
+                        ws["A1"].fill = purple_fill
+                        ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+                        ws.row_dimensions[1].height = 35
+
+                        row = 3
+                        meta = [
+                            ("Organización:", aud.get("nombre_empresa", "")),
+                            ("Sector:", aud.get("sector", "")),
+                            ("Tamaño:", aud.get("tamano_empresa", "")),
+                            ("Auditor:", usuario),
+                            ("Fecha:", __import__("datetime").datetime.now().strftime("%d/%m/%Y")),
+                        ]
+                        for label, val in meta:
+                            ws.cell(row=row, column=1, value=label).font = Font(name=font_family, bold=True, size=10)
+                            ws.cell(row=row, column=2, value=val).font = Font(name=font_family, size=10)
+                            row += 1
+
+                        row += 1
+                        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+                        ws.cell(row=row, column=1, value="CONTROLES RECOMENDADOS").font = Font(name=font_family, size=12, bold=True, color="FFFFFF")
+                        for c in range(1, 7):
+                            ws.cell(row=row, column=c).fill = header_fill
+                        row += 1
+
+                        ctrl_headers = ["Control", "Nombre", "Prioridad", "Tiempo", "Responsable", "Estado"]
+                        for ci, h in enumerate(ctrl_headers, 1):
+                            cell = ws.cell(row=row, column=ci, value=h)
+                            cell.font = Font(name=font_family, bold=True, color="FFFFFF", size=9)
+                            cell.fill = PatternFill(start_color="0F3460", end_color="0F3460", fill_type="solid")
+                            cell.border = thin_border
+                            cell.alignment = Alignment(horizontal="center", vertical="center")
+                        row += 1
+
+                        for idx, c in enumerate(ctrls):
+                            vals = [c.get(k, "") for k in ["id", "nombre", "prioridad", "tiempo_estimado", "responsable_sugerido", "estado"]]
+                            for ci, v in enumerate(vals, 1):
+                                cell = ws.cell(row=row, column=ci, value=v)
+                                cell.font = Font(name=font_family, size=9)
+                                cell.border = thin_border
+                                if idx % 2 == 1:
+                                    cell.fill = alt_fill
+                            row += 1
+
+                        row += 1
                         for fase in plan.get("fases", []):
-                            ws.append([fase.get("fase", "")])
-                            ws.append(["Control", "Nombre", "Prioridad", "Tiempo", "Responsable"])
+                            ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+                            ws.cell(row=row, column=1, value=fase.get("fase", "")).font = Font(name=font_family, size=11, bold=True, color="FFFFFF")
+                            for c in range(1, 7):
+                                ws.cell(row=row, column=c).fill = header_fill
+                            row += 1
+                            fase_headers = ["Control", "Nombre", "Prioridad", "Tiempo", "Responsable", ""]
+                            for ci, h in enumerate(fase_headers, 1):
+                                cell = ws.cell(row=row, column=ci, value=h)
+                                cell.font = Font(name=font_family, bold=True, color="FFFFFF", size=9)
+                                cell.fill = PatternFill(start_color="0F3460", end_color="0F3460", fill_type="solid")
+                                cell.border = thin_border
+                            row += 1
                             for item in fase.get("controles", []):
-                                ws.append([
-                                    item.get("id", ""),
-                                    item.get("nombre", ""),
-                                    item.get("prioridad", ""),
-                                    item.get("tiempo_estimado", ""),
-                                    item.get("responsable_sugerido", "TI"),
-                                ])
-                            ws.append([])
+                                vals = [item.get(k, "") for k in ["id", "nombre", "prioridad", "tiempo_estimado", "responsable_sugerido", ""]]
+                                for ci, v in enumerate(vals, 1):
+                                    ws.cell(row=row, column=ci, value=v).font = Font(name=font_family, size=9)
+                                    ws.cell(row=row, column=ci).border = thin_border
+                                row += 1
+                            row += 1
+
+                        ws.column_dimensions["A"].width = 14
+                        ws.column_dimensions["B"].width = 32
+                        ws.column_dimensions["C"].width = 14
+                        ws.column_dimensions["D"].width = 14
+                        ws.column_dimensions["E"].width = 20
+                        ws.column_dimensions["F"].width = 14
+
                         buf = io.BytesIO()
                         wb.save(buf)
                         buf.seek(0)
