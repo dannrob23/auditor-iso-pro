@@ -219,15 +219,19 @@ div.stButton > button:hover {
     min-width: 300px !important;
     max-width: 300px !important;
     margin-left: 0 !important;
+    transform: translateX(0px) !important;
+    position: relative !important;
+    visibility: visible !important;
 }
 [data-testid="stSidebarContent"] {
     overflow-y: auto !important;
     padding: 1rem !important;
 }
-/* Ocultar el botón de colapso completamente */
+/* Ocultar el botón de colapso completamente (varios selectores para compatibilidad) */
 [data-testid="collapsedControl"],
 button[data-testid="baseButton-header"],
-section[data-testid="stSidebar"] + div > button {
+section[data-testid="stSidebar"] + div > button,
+[data-testid="stBaseButton-header"] {
     display: none !important;
 }
 /* Forzar que el contenido principal respete el sidebar */
@@ -342,7 +346,7 @@ with st.sidebar:
     with st.expander("⚙️ Config. Asistente IA", expanded=False):
         proveedor = st.selectbox(
             "Proveedor de IA",
-            ["Google (Gemini)", "DeepSeek", "OpenAI"],
+            ["Google (Gemini)", "DeepSeek", "OpenAI", "Groq (Gratis)"],
             index=1,
         )
 
@@ -350,6 +354,8 @@ with st.sidebar:
             modelo = st.selectbox("Modelo", ["gemini-1.5-pro", "gemini-1.5-flash"], index=0)
         elif proveedor == "DeepSeek":
             modelo = st.selectbox("Modelo", ["deepseek-chat", "deepseek-coder"], index=0)
+        elif proveedor == "Groq (Gratis)":
+            modelo = st.selectbox("Modelo", ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"], index=0)
         else:
             modelo = st.selectbox("Modelo", ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"], index=0)
 
@@ -441,6 +447,17 @@ def ejecutar_gap_analysis(texto_politica: str, proveedor: str, modelo_llm: str, 
             base_url="https://api.deepseek.com/v1",
         )
     
+    elif proveedor == "Groq (Gratis)":
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            return "ERROR: No se encontró GROQ_API_KEY en el archivo .env"
+        llm = ChatOpenAI(
+            model=modelo_llm,
+            temperature=temp,
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
+    
     else: # OpenAI
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -525,6 +542,11 @@ def _construir_llm(proveedor: str, modelo_llm: str, temp: float):
         if not api_key:
             raise ValueError("No se encontró DEEPSEEK_API_KEY en .env")
         return ChatOpenAI(model=modelo_llm, temperature=temp, api_key=api_key, base_url="https://api.deepseek.com/v1")
+    elif proveedor == "Groq (Gratis)":
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("No se encontró GROQ_API_KEY en .env")
+        return ChatOpenAI(model=modelo_llm, temperature=temp, api_key=api_key, base_url="https://api.groq.com/openai/v1")
     else:
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
@@ -1474,6 +1496,10 @@ if opcion_menu == "🔬 Autodiagnóstico":
                         api_key_l = os.getenv("DEEPSEEK_API_KEY")
                         if api_key_l:
                             llm_local_auto = ChatOpenAI(model=modelo, temperature=temperatura, api_key=api_key_l, base_url="https://api.deepseek.com/v1")
+                    elif proveedor == "Groq (Gratis)":
+                        api_key_l = os.getenv("GROQ_API_KEY")
+                        if api_key_l:
+                            llm_local_auto = ChatOpenAI(model=modelo, temperature=temperatura, api_key=api_key_l, base_url="https://api.groq.com/openai/v1")
                     elif proveedor == "Google (Gemini)":
                         api_key_l = os.getenv("GOOGLE_API_KEY")
                         if api_key_l:
