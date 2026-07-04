@@ -30,7 +30,15 @@ from database import (
 from pdf_export import generar_pdf, generar_pdf_propuesta_interoperabilidad
 
 try:
-    from rag_knowledge import obtener_contexto, indexar_documentos, base_conocimiento_activa
+    from rag_knowledge import (
+        obtener_contexto,
+        indexar_documentos,
+        base_conocimiento_activa,
+        indexar_documentos_temporales,
+        listar_uploads,
+        limpiar_uploads,
+        base_uploads_activa,
+    )
     _RAG_AVAILABLE = True
 except Exception:
     _RAG_AVAILABLE = False
@@ -510,7 +518,7 @@ INSTRUCCIONES DE FORMATO:
             # Verificación rápida de que RAG está disponible
             from rag_knowledge import base_conocimiento_activa
             if base_conocimiento_activa():
-                contexto_oficial = obtener_contexto(texto_politica[:1500], k=4)
+                contexto_oficial = obtener_contexto(texto_politica[:1500], k=4, incluir_uploads=True)
                 rag_funciona = bool(contexto_oficial)
             else:
                 contexto_oficial = ""
@@ -748,6 +756,48 @@ if opcion_menu == "📚 Base RAG":
                 except Exception as e:
                     st.error(f"Error ejecutando diagnóstico: {e}")
                 
+
+    # Uploader temporal aislado: no toca knowledge_base/
+    st.markdown("---")
+    st.markdown("#### 📤 Documentos temporales (carga puntual)")
+    st.caption("Estos archivos solo se usan para la sesión actual y no alteran la base oficial de conocimiento.")
+    archivos_subidos = st.file_uploader(
+        "Arrastra PDFs, TXTs o DOCXs aquí",
+        type=["pdf", "txt", "docx"],
+        accept_multiple_files=True,
+        key="rag_uploader_temporal",
+    )
+    if archivos_subidos:
+        from pathlib import Path as _Path
+        UPLOADS_DIR = _Path("uploads")
+        UPLOADS_DIR.mkdir(exist_ok=True)
+        guardados = []
+        for archivo in archivos_subidos:
+            ruta_destino = UPLOADS_DIR / archivo.name
+            with open(ruta_destino, "wb") as f:
+                f.write(archivo.getbuffer())
+            guardados.append(archivo.name)
+        st.success(f"✅ {len(guardados)} archivos subidos: {', '.join(guardados)}")
+
+    col_up1, col_up2, col_up3 = st.columns(3)
+    with col_up1:
+        if st.button("🔄 Indexar uploads", key="btn_indexar_uploads"):
+            with st.spinner("Indexando documentos temporales..."):
+                num_chunks, msg = indexar_documentos_temporales()
+                if num_chunks > 0:
+                    st.success(msg)
+                else:
+                    st.warning(msg)
+    with col_up2:
+        if st.button("🧹 Limpiar uploads", key="btn_limpiar_uploads"):
+            limpiar_uploads()
+            st.success("Uploads temporales eliminados.")
+            st.rerun()
+    with col_up3:
+        if base_uploads_activa():
+            st.markdown("**Uploads activos:** ✅")
+        else:
+            st.markdown("**Uploads activos:** —")
     st.info("💡 **Cómo funciona:** El sistema busca en el 'Marco de Gobernanza' (NIST/ISO42001) y en los estándares de ciberseguridad (ISO27001) para anclar la evaluación a requisitos reales de infraestructura crítica.")
     st.markdown("</div>", unsafe_allow_html=True)
 
