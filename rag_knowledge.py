@@ -8,12 +8,15 @@ import os
 import shutil
 from pathlib import Path
 
-import torchvision  # must be imported before transformers
-
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
+try:
+    import torchvision  # must be imported before transformers
+    from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from langchain_community.vectorstores import FAISS
+    from langchain_huggingface import HuggingFaceEmbeddings
+    _RAG_AVAILABLE = True
+except Exception:
+    _RAG_AVAILABLE = False
 
 KB_DIR = Path("knowledge_base")
 DB_DIR = Path("data/faiss_index")
@@ -27,11 +30,16 @@ _embeddings_model = None
 def get_embeddings():
     global _embeddings_model
     if _embeddings_model is None:
+        if not _RAG_AVAILABLE:
+            raise RuntimeError("Dependencias de RAG no disponibles")
         _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     return _embeddings_model
 
 def indexar_documentos():
     """Lee todos los PDFs/TXTs en knowledge_base/, los fragmenta y los guarda en FAISS."""
+    if not _RAG_AVAILABLE:
+        return 0, "RAG no disponible: faltan dependencias (torchvision/transformers/faiss)."
+    
     documentos = []
     
     # Verificar si hay archivos
