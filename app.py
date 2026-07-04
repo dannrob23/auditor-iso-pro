@@ -28,7 +28,21 @@ from database import (
     guardar_vulnerabilidad, limpiar_vulnerabilidades_antiguas, exportar_excel_respaldo,
 )
 from pdf_export import generar_pdf, generar_pdf_propuesta_interoperabilidad
-from rag_knowledge import obtener_contexto, indexar_documentos, base_conocimiento_activa
+
+try:
+    from rag_knowledge import obtener_contexto, indexar_documentos, base_conocimiento_activa
+    _RAG_AVAILABLE = True
+except Exception:
+    _RAG_AVAILABLE = False
+
+    def obtener_contexto(query: str, k: int = 4) -> str:
+        return ""
+
+    def indexar_documentos():
+        return 0, "RAG no disponible: faltan dependencias en el entorno."
+
+    def base_conocimiento_activa() -> bool:
+        return False
 from interoperabilidad import (
     MATRIZ_INTEROPERABILIDAD, SECTORES_IC, obtener_dimensiones,
     obtener_controles_por_dimension, calcular_cobertura, obtener_sector,

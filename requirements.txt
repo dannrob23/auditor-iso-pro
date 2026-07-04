@@ -18,3 +18,4 @@ schedule
 pyyaml
 google-genai
 groq
+docx2txt

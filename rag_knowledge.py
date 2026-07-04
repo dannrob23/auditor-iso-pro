@@ -8,9 +8,31 @@ import os
 import shutil
 from pathlib import Path
 
+# Todos los imports de RAG son opcionales para no romper la app si faltan dependencias
+_RAG_AVAILABLE = False
+_HAS_PDF = False
+_HAS_TXT = False
+_HAS_DOCX = False
+
 try:
-    import torchvision  # must be imported before transformers
-    from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
+    from langchain_community.document_loaders import PyPDFLoader
+    _HAS_PDF = True
+except Exception:
+    pass
+
+try:
+    from langchain_community.document_loaders import TextLoader
+    _HAS_TXT = True
+except Exception:
+    pass
+
+try:
+    from langchain_community.document_loaders import Docx2txtLoader
+    _HAS_DOCX = True
+except Exception:
+    pass
+
+try:
     from langchain_text_splitters import RecursiveCharacterTextSplitter
     from langchain_community.vectorstores import FAISS
     from langchain_huggingface import HuggingFaceEmbeddings
@@ -24,39 +46,50 @@ DB_DIR = Path("data/faiss_index")
 KB_DIR.mkdir(exist_ok=True)
 DB_DIR.parent.mkdir(exist_ok=True)
 
-# Usamos un modelo de embeddings local y ligero (no consume créditos de API)
 _embeddings_model = None
 
 def get_embeddings():
     global _embeddings_model
     if _embeddings_model is None:
+        if not _RAG_AVAILABLE:
+            raise RuntimeError("Dependencias de RAG no disponibles")
         _embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     return _embeddings_model
 
 def indexar_documentos():
-    """Lee todos los PDFs/TXTs en knowledge_base/, los fragmenta y los guarda en FAISS."""
-    documentos = []
-    
-    # Verificar si hay archivos
-    archivos = list(KB_DIR.glob("*.pdf")) + list(KB_DIR.glob("*.txt")) + list(KB_DIR.glob("*.docx"))
+    """Lee los documentos soportados en knowledge_base/, los fragmenta y los guarda en FAISS."""
+    if not _RAG_AVAILABLE:
+        return 0, "RAG no disponible: faltan dependencias base."
+
+    archivos = []
+    if _HAS_PDF:
+        archivos.extend(KB_DIR.glob("*.pdf"))
+    if _HAS_TXT:
+        archivos.extend(KB_DIR.glob("*.txt"))
+    if _HAS_DOCX:
+        archivos.extend(KB_DIR.glob("*.docx"))
+
     if not archivos:
-        return 0, "No se encontraron archivos en la carpeta knowledge_base/."
+        return 0, "No se encontraron archivos indexables en knowledge_base/."
+
+    documentos = []
+    errores = []
 
     for archivo in archivos:
-        if archivo.suffix.lower() == ".pdf":
-            loader = PyPDFLoader(str(archivo))
-        elif archivo.suffix.lower() == ".txt":
-            loader = TextLoader(str(archivo), encoding="utf-8")
-        elif archivo.suffix.lower() == ".docx":
-            loader = Docx2txtLoader(str(archivo))
-        else:
-            continue
-        documentos.extend(loader.load())
+        suffix = archivo.suffix.lower()
+        try:
+            if suffix == ".pdf" and _HAS_PDF:
+                documentos.extend(PyPDFLoader(str(archivo)).load())
+            elif suffix == ".txt" and _HAS_TXT:
+                documentos.extend(TextLoader(str(archivo), encoding="utf-8").load())
+            elif suffix == ".docx" and _HAS_DOCX:
+                documentos.extend(Docx2txtLoader(str(archivo)).load())
+        except Exception as e:
+            errores.append(f"{archivo.name}: {e}")
 
     if not documentos:
-        return 0, "Los archivos están vacíos o no se pudieron leer."
+        return 0, "No se pudo extraer texto de los documentos. Detalles: " + "; ".join(errores)
 
-    # Dividir los documentos en fragmentos semánticos
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -64,55 +97,41 @@ def indexar_documentos():
     )
     chunks = text_splitter.split_documents(documentos)
 
-    # Crear la base de datos vectorial
     vectorstore = FAISS.from_documents(chunks, get_embeddings())
-    
-    # Guardar localmente
     if DB_DIR.exists():
         shutil.rmtree(DB_DIR)
     vectorstore.save_local(str(DB_DIR))
-    
-    return len(chunks), f"Se indexaron {len(chunks)} fragmentos de {len(archivos)} documentos."
+
+    msg = f"Se indexaron {len(chunks)} fragmentos de {len(archivos)} documentos."
+    if errores:
+        msg += f" Algunos archivos no se pudieron leer: " + "; ".join(errores)
+    return len(chunks), msg
 
 def obtener_contexto(query: str, k: int = 4) -> str:
     """Busca en la norma ISO los fragmentos más relevantes para la consulta dada."""
     if not DB_DIR.exists() or not (DB_DIR / "index.faiss").exists():
-        return "" # No hay base de conocimiento aún
+        return ""
 
     try:
-        # Verificar que ambos archivos existan antes de intentar cargar
         faiss_file = DB_DIR / "index.faiss"
         pkl_file = DB_DIR / "index.pkl"
-
         if not faiss_file.exists() or not pkl_file.exists():
-            # Usar st.warning si estamos en streamlit, de lo contrario no imprimir
             return ""
 
-        # Obtener embeddings (con caché para evitar recargas)
         embeddings = get_embeddings()
-
-        # Cargar el vectorstore
         vectorstore = FAISS.load_local(str(DB_DIR), embeddings, allow_dangerous_deserialization=True)
 
-        # Verificar que el vectorstore tenga documentos
         if vectorstore.index is None or vectorstore.index.ntotal == 0:
             return ""
 
-        # Realizar búsqueda
         resultados = vectorstore.similarity_search(query, k=k)
-
         if not resultados:
             return ""
 
-        # Formatear el contexto recuperado
-        contexto = "\n\n".join([f"--- FRAGMENTO DE LA NORMA OFICIAL ---\n{doc.page_content}" for doc in resultados])
-        return contexto
-
-    except OSError as e:
-        # Error de I/O - no intentar imprimir para evitar cascada de errores
+        return "\n\n".join([f"--- FRAGMENTO DE LA NORMA OFICIAL ---\n{doc.page_content}" for doc in resultados])
+    except OSError:
         return ""
-    except Exception as e:
-        # Cualquier otro error - tampoco imprimir
+    except Exception:
         return ""
 
 def base_conocimiento_activa() -> bool:
