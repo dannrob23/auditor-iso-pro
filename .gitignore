@@ -27,18 +27,32 @@ __pycache__/
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Logs
-*.log
+# Office lock files
+.~lock.*
 
 # Distribution / packaging
 dist/
 build/
 *.egg-info/
 
-# Lock files
-.*.lock
-*.lock
+# Local Excel outputs and databases
+data/Matriz_Riesgos_IA.xlsx
+data/faiss_index/
+data/reportes.db
 
-# Duplicate project folder
+# Local-only knowledge base files (presentations, proprietary docs, archives)
+knowledge_base/*.pptx
+knowledge_base/*.xlsx
+knowledge_base/*.xls
+knowledge_base/*.zip
+knowledge_base/*.coredownload.*
+knowledge_base/markdown/
+
+# Local zip archives
+codigo_limpio.zip
+
+# Duplicate project folder (if present)
 auditor-iso-pro/
