@@ -390,3 +390,371 @@ def generar_pdf(
 
     doc.build(story)
     return buffer.getvalue()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Formato profesional de Informe de Auditoría ISO 27001
+# Basado en estructura de informes ISO 19011
+# ══════════════════════════════════════════════════════════════════════════════
+
+def generar_informe_auditoria_profesional(
+    resultado_md: str,
+    nombre_empresa: str,
+    sector: str,
+    tamano_empresa: str,
+    nombre_doc: str,
+    usuario: str,
+    proveedor: str,
+    modelo: str,
+    stats: dict,
+    controles_seleccionados: list[dict] | None = None,
+    plan_implementacion: dict | None = None,
+) -> bytes:
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=2*cm, rightMargin=2*cm,
+        topMargin=1.5*cm, bottomMargin=1.5*cm,
+        title=f"Informe de Auditoría ISO 27001 — {nombre_empresa or nombre_doc}",
+        author=f"Auditor: {usuario}",
+    )
+
+    styles = getSampleStyleSheet()
+    story = []
+
+    # ── PORTADA ────────────────────────────────────────────────────────────────
+    story.append(Spacer(1, 3*cm))
+    title_cover = ParagraphStyle("TitleCover", fontSize=26, textColor=COLOR_DARK,
+                                 fontName="Helvetica-Bold", alignment=TA_CENTER, spaceAfter=6)
+    story.append(Paragraph("INFORME DE AUDITORÍA", title_cover))
+    story.append(Paragraph("ISO/IEC 27001:2022", title_cover))
+    sub_cover = ParagraphStyle("SubCover", fontSize=13, textColor=COLOR_PURPLE,
+                               fontName="Helvetica", alignment=TA_CENTER, spaceAfter=4)
+    story.append(Paragraph("Sistema de Gestión de Seguridad de la Información", sub_cover))
+    story.append(Spacer(1, 1*cm))
+    story.append(HRFlowable(width="60%", thickness=2, color=COLOR_PURPLE, spaceAfter=12))
+    story.append(Spacer(1, 1*cm))
+
+    cm_s = ParagraphStyle("cm", fontSize=11, fontName="Helvetica", alignment=TA_CENTER, spaceAfter=4)
+    if nombre_empresa:
+        story.append(Paragraph(f"<b>Organización:</b> {nombre_empresa}", cm_s))
+    if sector:
+        story.append(Paragraph(f"<b>Sector:</b> {sector} ({tamano_empresa})", cm_s))
+    story.append(Paragraph(f"<b>Documento auditado:</b> {nombre_doc}", cm_s))
+    story.append(Paragraph(f"<b>Auditor:</b> {usuario}", cm_s))
+    story.append(Paragraph(f"<b>Fecha de emisión:</b> {datetime.now().strftime('%d/%m/%Y %H:%M UTC')}", cm_s))
+    story.append(Paragraph(f"<b>Modelo de IA:</b> {proveedor} / {modelo}", cm_s))
+    story.append(Spacer(1, 1.5*cm))
+    conf_s = ParagraphStyle("conf", fontSize=9, textColor=COLOR_RED, fontName="Helvetica-Bold", alignment=TA_CENTER)
+    story.append(Paragraph("CONFIDENCIAL — Solo para uso interno de la organización", conf_s))
+    story.append(Paragraph("Este informe contiene información sensible de seguridad de la información",
+                           ParagraphStyle("conf2", fontSize=8, textColor=COLOR_GRAY_TEXT, alignment=TA_CENTER)))
+    story.append(Spacer(1, 2*cm))
+    doc.build(story)
+    story.clear()
+
+    # ── RESUMEN EJECUTIVO ─────────────────────────────────────────────────────
+    section_s = ParagraphStyle("Sec", fontSize=14, textColor=COLOR_DARK,
+                               fontName="Helvetica-Bold", spaceBefore=14, spaceAfter=6)
+
+    story.append(Paragraph("1. Resumen Ejecutivo", section_s))
+    conformes = stats.get("conformes", 0)
+    parciales = stats.get("parciales", 0)
+    no_conformes = stats.get("no_conformes", 0)
+    pct = stats.get("cumplimiento_pct", 0.0)
+    total = conformes + parciales + no_conformes or 1
+
+    resumen_texto = (
+        f"Se realizó una auditoría de brechas sobre la política de seguridad de la información "
+        f"de <b>{nombre_empresa or nombre_doc}</b>, evaluando <b>{total}</b> controles del Anexo A de "
+        f"ISO/IEC 27001:2022. El nivel de cumplimiento estimado es del <b>{pct:.1f}%</b>. "
+        f"Se identificaron <b>{no_conformes}</b> controles no conformes, <b>{parciales}</b> parciales "
+        f"y <b>{conformes}</b> conformes."
+    )
+    body_s = ParagraphStyle("Body", fontSize=10, fontName="Helvetica", leading=14, spaceAfter=8)
+    story.append(Paragraph(resumen_texto, body_s))
+
+    barra_llena = int(pct / 5)
+    barra = "█" * barra_llena + "░" * (20 - barra_llena)
+    res_data = [
+        ["Indicador", "Cantidad", "%", "Barra"],
+        ["✅ Conformes",   str(conformes),    f"{conformes/total*100:.0f}%", ""],
+        ["⚠️ Parciales",   str(parciales),    f"{parciales/total*100:.0f}%", ""],
+        ["❌ No conformes", str(no_conformes), f"{no_conformes/total*100:.0f}%", ""],
+        ["📊 Cumplimiento", "", f"{pct:.1f}%", barra],
+    ]
+    rt = Table(res_data, colWidths=[6*cm, 3*cm, 3*cm, 5*cm])
+    rt.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), COLOR_DARK),
+        ("TEXTCOLOR", (0, 0), (-1, 0), COLOR_WHITE),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [COLOR_GRAY_BG, COLOR_WHITE]),
+        ("TEXTCOLOR", (0, 1), (0, 1), COLOR_GREEN),
+        ("TEXTCOLOR", (0, 2), (0, 2), COLOR_YELLOW),
+        ("TEXTCOLOR", (0, 3), (0, 3), COLOR_RED),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cbd5e1")),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(rt)
+    story.append(Spacer(1, 0.5*cm))
+
+    # ── ALCANCE ────────────────────────────────────────────────────────────────
+    story.append(Paragraph("2. Alcance y Metodología", section_s))
+    alc_data = [
+        ["Elemento", "Descripción"],
+        ["Estándar", "ISO/IEC 27001:2022 — Anexo A"],
+        ["Norma de auditoría", "ISO 19011:2018"],
+        ["Alcance", f"Análisis de brechas de {nombre_empresa or nombre_doc}"],
+        ["Metodología", "Evaluación automatizada por IA con fuentes normativas"],
+        ["Sector", sector or "—"],
+        ["Tamaño", tamano_empresa or "—"],
+        ["Controles", f"{total} del Anexo A"],
+        ["Fecha", datetime.now().strftime("%d/%m/%Y")],
+    ]
+    at = Table(alc_data, colWidths=[5*cm, 12*cm])
+    at.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), COLOR_PURPLE),
+        ("TEXTCOLOR", (0, 0), (-1, 0), COLOR_WHITE),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [COLOR_GRAY_BG, COLOR_WHITE]),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cbd5e1")),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(at)
+    story.append(Spacer(1, 0.5*cm))
+
+    # ── RESULTADOS ─────────────────────────────────────────────────────────────
+    story.append(Paragraph("3. Resultados del Gap Analysis", section_s))
+    headers, rows = _parse_md_table(resultado_md)
+    if headers and rows:
+        import html
+        h_s = ParagraphStyle("h", fontSize=8, fontName="Helvetica-Bold", textColor=COLOR_WHITE)
+        c_s = ParagraphStyle("c", fontSize=8, fontName="Helvetica", leading=10, wordWrap='CJK')
+        clean_h = [Paragraph(html.escape(re.sub(r'[✅⚠️❌📋🔐]', '', h).strip()).replace("**", ""), h_s) for h in headers]
+        f_rows = []
+        for row in rows:
+            fr = []
+            for j, cell in enumerate(row):
+                clean_c = html.escape(cell).replace("**", "")
+                if j == 1:
+                    chex = _estado_color(cell).hexval()[2:]
+                    cstr = f"#{chex}" if not chex.startswith('#') else chex
+                    fr.append(Paragraph(f"<font color='{cstr}'><b>{clean_c}</b></font>", c_s))
+                else:
+                    fr.append(Paragraph(clean_c, c_s))
+            f_rows.append(fr)
+        td = [clean_h] + f_rows
+        cw = [4.5*cm, 4.0*cm, 8.5*cm] if len(headers) == 3 else None
+        gt = Table(td, colWidths=cw, repeatRows=1)
+        ts = [
+            ("BACKGROUND", (0, 0), (-1, 0), COLOR_DARK),
+            ("TEXTCOLOR", (0, 0), (-1, 0), COLOR_WHITE),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cbd5e1")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [COLOR_GRAY_BG, COLOR_WHITE]),
+        ]
+        for i, row in enumerate(rows, start=1):
+            if len(row) > 1:
+                c = _estado_color(row[1])
+                ts.append(("TEXTCOLOR", (1, i), (1, i), c))
+                ts.append(("FONTNAME", (1, i), (1, i), "Helvetica-Bold"))
+        gt.setStyle(TableStyle(ts))
+        story.append(gt)
+    else:
+        bs = ParagraphStyle("b", fontSize=8, leading=12, spaceAfter=4)
+        for line in resultado_md.splitlines():
+            if line.strip():
+                story.append(Paragraph(line.strip(), bs))
+    story.append(Spacer(1, 0.5*cm))
+
+    # ── CONTROLES ──────────────────────────────────────────────────────────────
+    if controles_seleccionados:
+        story.append(Paragraph("4. Controles Recomendados", section_s))
+        cd = [["Control", "Nombre", "Prioridad", "Tiempo", "Estado"]]
+        for c in controles_seleccionados:
+            icon_p = {"alta": "🔴", "media": "🟡", "baja": "🟢"}.get(c.get("prioridad", ""), "⚪")
+            cd.append([c.get("id", ""), c.get("nombre", ""), f"{icon_p} {c.get('prioridad','').upper()}", c.get("tiempo_estimado",""), c.get("estado","pendiente")])
+        ct = Table(cd, colWidths=[3*cm, 6*cm, 3*cm, 3*cm, 3*cm])
+        ct.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), COLOR_DARK),
+            ("TEXTCOLOR", (0, 0), (-1, 0), COLOR_WHITE),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [COLOR_GRAY_BG, COLOR_WHITE]),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#cbd5e1")),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.append(ct)
+        story.append(Spacer(1, 0.5*cm))
+
+    # ── PLAN ───────────────────────────────────────────────────────────────────
+    if plan_implementacion:
+        story.append(Paragraph("5. Plan de Implementación", section_s))
+        for fase in plan_implementacion.get("fases", []):
+            fs = ParagraphStyle("f", fontSize=10, fontName="Helvetica-Bold", textColor=COLOR_PURPLE, spaceBefore=8, spaceAfter=4)
+            story.append(Paragraph(f"<b>{fase.get('fase','')}</b> — {fase.get('duracion_estimada','')}", fs))
+            items = fase.get("controles", [])
+            if items:
+                fd = [["Control", "Nombre", "Prioridad", "Tiempo", "Responsable"]]
+                for it in items:
+                    fd.append([it.get("id",""), it.get("nombre",""), it.get("prioridad",""), it.get("tiempo_estimado",""), it.get("responsable_sugerido","TI")])
+                ft = Table(fd, colWidths=[3*cm, 5*cm, 2.5*cm, 3*cm, 4*cm])
+                ft.setStyle(TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, 0), COLOR_PURPLE),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), COLOR_WHITE),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [COLOR_GRAY_BG, COLOR_WHITE]),
+                    ("GRID", (0, 0), (-1, -1), 0.2, colors.HexColor("#cbd5e1")),
+                ]))
+                story.append(ft)
+                story.append(Spacer(1, 0.2*cm))
+
+    # ── CONCLUSIONES ───────────────────────────────────────────────────────────
+    story.append(Paragraph("6. Conclusiones y Recomendaciones", section_s))
+    conclusion_text = (
+        f"Basado en la evaluación, el nivel de cumplimiento de <b>{nombre_empresa or nombre_doc}</b> "
+        f"frente a los requisitos del Anexo A de ISO/IEC 27001:2022 es del <b>{pct:.1f}%</b>. "
+    )
+    if pct >= 80:
+        conclusion_text += "La organización tiene un nivel de madurez aceptable."
+    elif pct >= 50:
+        conclusion_text += "Existen brechas significativas que requieren atención inmediata."
+    else:
+        conclusion_text += "El nivel es bajo. Se recomienda un plan de acción integral."
+    story.append(Paragraph(conclusion_text, body_s))
+    story.append(Paragraph("<b>Recomendaciones principales:</b>", ParagraphStyle("r", fontSize=10, fontName="Helvetica-Bold", spaceBefore=8)))
+    recs = [
+        "Priorizar los controles no conformes con acciones correctivas inmediatas.",
+        "Asignar responsables y plazos para cada control.",
+        "Realizar revisiones periódicas del progreso.",
+        "Capacitar al personal en los nuevos controles.",
+        "Documentar evidencias para futuras auditorías.",
+    ]
+    rs = ParagraphStyle("rs", fontSize=9, fontName="Helvetica", leading=12, leftIndent=10, spaceAfter=2)
+    for r in recs:
+        story.append(Paragraph(f"• {r}", rs))
+
+    # ── FIRMA ──────────────────────────────────────────────────────────────────
+    story.append(Spacer(1, 0.5*cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=COLOR_PURPLE))
+    story.append(Paragraph("7. Firma del Auditor", section_s))
+    fs = ParagraphStyle("fs", fontSize=10, fontName="Helvetica", spaceBefore=4, spaceAfter=4)
+    story.append(Paragraph(f"<b>Auditor:</b> {usuario}", fs))
+    story.append(Paragraph(f"<b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}", fs))
+    story.append(Paragraph("<b>Firma:</b> ___________________________________", fs))
+
+    ds = ParagraphStyle("ds", fontSize=8, textColor=COLOR_GRAY_TEXT, spaceBefore=8)
+    story.append(Paragraph(
+        f"<i>Generado con IA ({proveedor}). No reemplaza una auditoría formal certificada.</i>", ds))
+    story.append(HRFlowable(width="100%", thickness=1, color=COLOR_PURPLE, spaceBefore=6))
+    fl = ParagraphStyle("fl", fontSize=7, textColor=COLOR_GRAY_TEXT, alignment=TA_CENTER)
+    story.append(Paragraph(f"IA-SEC Auditor ISO 27001 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · Confidencial", fl))
+
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def generar_plantilla_informe_markdown(
+    nombre_empresa: str,
+    sector: str,
+    tamano_empresa: str,
+    usuario: str,
+    proveedor: str,
+    modelo: str,
+) -> str:
+    return f"""# INFORME DE AUDITORÍA ISO/IEC 27001:2022
+
+---
+
+## 1. Información General
+
+| Campo | Valor |
+|-------|-------|
+| **Organización** | {nombre_empresa or "[Nombre de la empresa]"} |
+| **Sector** | {sector or "[Sector]"} |
+| **Tamaño** | {tamano_empresa or "[Tamaño]"} |
+| **Estándar evaluado** | ISO/IEC 27001:2022 — Anexo A |
+| **Auditor** | {usuario} |
+| **Fecha** | {datetime.now().strftime("%d/%m/%Y")} |
+| **Modelo de IA** | {proveedor} / {modelo} |
+
+---
+
+## 2. Resumen Ejecutivo
+
+*Ejemplo:* Se evaluaron XX controles del Anexo A. Se identificaron XX conformes, XX parciales y XX no conformes. Nivel de cumplimiento: XX%.
+
+---
+
+## 3. Alcance y Metodología
+
+- **Norma:** ISO/IEC 27001:2022
+- **Auditoría:** ISO 19011:2018
+- **Metodología:** Gap Analysis asistido por IA
+- **Documentos:** [listar]
+
+---
+
+## 4. Resultados del Gap Analysis
+
+| Control ISO | Estado | Acción Correctiva |
+|-------------|--------|-------------------|
+| A.5.1 | ✅ Conforme | — |
+| A.5.9 | ⚠️ Parcial | Completar inventario |
+| A.5.15 | ❌ No conforme | Implementar control |
+
+---
+
+## 5. Controles Recomendados ISO 27002
+
+| Control | Nombre | Prioridad | Tiempo | Responsable |
+|---------|--------|-----------|--------|-------------|
+| A.5.1 | Políticas | Alta | 2 sem. | TI |
+
+---
+
+## 6. Plan de Implementación
+
+### Fase 1: Alta — 1-2 meses
+| Control | Acción | Responsable | Plazo |
+|---------|--------|-------------|-------|
+
+### Fase 2: Media — 2-4 meses
+...
+
+### Fase 3: Baja — 3-6 meses
+...
+
+---
+
+## 7. Conclusiones
+
+**Recomendaciones:** [completar]
+
+---
+
+## 8. Firma
+
+**Auditor:** _________________
+**Fecha:** __________________
+**Firma:** __________________
+
+---
+
+*Este informe no reemplaza una auditoría formal certificada.*
+"""

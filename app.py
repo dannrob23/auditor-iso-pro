@@ -28,7 +28,12 @@ from database import (
     guardar_vulnerabilidad, limpiar_vulnerabilidades_antiguas, exportar_excel_respaldo,
     crear_auditoria, obtener_auditorias, obtener_auditoria, actualizar_auditoria,
 )
-from pdf_export import generar_pdf, generar_pdf_propuesta_interoperabilidad
+from pdf_export import (
+    generar_pdf,
+    generar_pdf_propuesta_interoperabilidad,
+    generar_informe_auditoria_profesional,
+    generar_plantilla_informe_markdown,
+)
 from guia_auditoria import (
     ETAPAS, SECTORES_EMPRESA, TAMANOS_EMPRESA,
     obtener_controles_recomendados, generar_plan_implementacion,
@@ -700,14 +705,35 @@ if opcion_menu == "📄 Auditoría de IA":
             st.markdown("---")
             st.markdown("## 📊 Resultados del Gap Analysis")
             st.markdown(resultado)
-            col_md, col_pdf = st.columns(2)
+            col_md, col_pdf, col_pro = st.columns(3)
             with col_md:
                 st.download_button("⬇️ Descargar (.md)", data=resultado,
                     file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.md", mime="text/markdown")
             with col_pdf:
                 pdf_bytes = generar_pdf(resultado, archivo.name, usuario, proveedor, modelo, stats)
-                st.download_button("📄 Descargar PDF", data=pdf_bytes,
+                st.download_button("📄 PDF Simple", data=pdf_bytes,
                     file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.pdf", mime="application/pdf")
+            with col_pro:
+                # Obtener datos de auditoría para el informe profesional
+                aud_id = st.session_state.get("auditoria_actual_id")
+                aud_data = obtener_auditoria(aud_id) if aud_id else None
+                ctrls = st.session_state.get("controles_actuales", []) if st.session_state.get("controles_aid") == aud_id else None
+                plan = st.session_state.get("plan_actual", {}) if st.session_state.get("controles_aid") == aud_id else None
+                prof_bytes = generar_informe_auditoria_profesional(
+                    resultado_md=resultado,
+                    nombre_empresa=aud_data.get("nombre_empresa", archivo.name) if aud_data else archivo.name,
+                    sector=aud_data.get("sector", "") if aud_data else "",
+                    tamano_empresa=aud_data.get("tamano_empresa", "") if aud_data else "",
+                    nombre_doc=archivo.name,
+                    usuario=usuario,
+                    proveedor=proveedor,
+                    modelo=modelo,
+                    stats=stats,
+                    controles_seleccionados=ctrls if ctrls and aud_id else None,
+                    plan_implementacion=plan if plan and aud_id else None,
+                )
+                st.download_button("📄 PDF Informe Profesional", data=prof_bytes,
+                    file_name=f"informe_auditoria_{archivo.name.replace('.pdf','')}.pdf", mime="application/pdf")
     else:
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -733,14 +759,34 @@ if opcion_menu == "✏️ Texto Libre":
             st.markdown("---")
             st.markdown("## 📊 Resultados del Gap Analysis")
             st.markdown(resultado)
-            col_md2, col_pdf2 = st.columns(2)
+            col_md2, col_pdf2, col_pro2 = st.columns(3)
             with col_md2:
-                st.download_button("⬇️ Descargar (.md)", data=resultado,
+                st.download_button("⬇️ (.md)", data=resultado,
                     file_name="gap_analysis_resultado.md", mime="text/markdown")
             with col_pdf2:
                 pdf_bytes = generar_pdf(resultado, "Análisis manual", usuario, proveedor, modelo, stats)
-                st.download_button("📄 Descargar PDF", data=pdf_bytes,
+                st.download_button("📄 PDF Simple", data=pdf_bytes,
                     file_name="gap_analysis_resultado.pdf", mime="application/pdf")
+            with col_pro2:
+                aud_id = st.session_state.get("auditoria_actual_id")
+                aud_data = obtener_auditoria(aud_id) if aud_id else None
+                ctrls = st.session_state.get("controles_actuales", []) if st.session_state.get("controles_aid") == aud_id else None
+                plan = st.session_state.get("plan_actual", {}) if st.session_state.get("controles_aid") == aud_id else None
+                prof_bytes = generar_informe_auditoria_profesional(
+                    resultado_md=resultado,
+                    nombre_empresa=aud_data.get("nombre_empresa", "Análisis manual") if aud_data else "Análisis manual",
+                    sector=aud_data.get("sector", "") if aud_data else "",
+                    tamano_empresa=aud_data.get("tamano_empresa", "") if aud_data else "",
+                    nombre_doc="Análisis manual",
+                    usuario=usuario,
+                    proveedor=proveedor,
+                    modelo=modelo,
+                    stats=stats,
+                    controles_seleccionados=ctrls if ctrls and aud_id else None,
+                    plan_implementacion=plan if plan and aud_id else None,
+                )
+                st.download_button("📄 PDF Profesional", data=prof_bytes,
+                    file_name="informe_auditoria_manual.pdf", mime="application/pdf")
 
 # ── Tab Ruta de Auditoría ISO 27002 ──────────────────────────────────────────
 if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
@@ -936,7 +982,7 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
                             st.caption(f"Responsable sugerido: {ctrl.get('responsable_sugerido', '')}")
 
                 # Exportar reporte
-                st.markdown("---")
+                    st.markdown("---")
                 if st.button("📄 Generar reporte Markdown"):
                     md = generar_reporte_markdown(aud, ctrls if isinstance(ctrls, list) else [],
                                                   plan, aud.get("nombre_empresa", ""),
@@ -944,12 +990,26 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
                     st.download_button("⬇️ Descargar (.md)", data=md,
                                        file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.md",
                                        mime="text/markdown")
-                    # PDF desde pdf_export
                     from pdf_export import generar_pdf
                     pdf_bytes = generar_pdf(md, "Plan Implementación", usuario, "", "ISO 27002", {"cumplimiento_pct": pct})
                     st.download_button("📄 Descargar PDF", data=pdf_bytes,
                                        file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.pdf",
                                        mime="application/pdf")
+
+                # ── Descargar plantilla de informe profesional ─────────────────
+                st.markdown("---")
+                st.markdown("### 📑 Plantilla de Informe de Auditoría")
+                st.caption("Descarga una plantilla Markdown reutilizable para informes de auditoría ISO 27001.")
+                if st.button("📝 Descargar plantilla (.md)", key="btn_plantilla"):
+                    plantilla = generar_plantilla_informe_markdown(
+                        aud.get("nombre_empresa", ""),
+                        aud.get("sector", ""),
+                        aud.get("tamano_empresa", ""),
+                        usuario, "", "ISO 27002",
+                    )
+                    st.download_button("⬇️ Plantilla .md", data=plantilla,
+                                       file_name="plantilla_informe_auditoria_iso27001.md", mime="text/markdown",
+                                       key="dl_plantilla")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -2034,10 +2094,10 @@ if opcion_menu == "🗂️ Historial":
                     st.markdown(f"**Modelo:** {r['proveedor']} / {r['modelo']}  |  **Usuario:** {r['usuario']}")
                     st.markdown("---")
                     st.markdown(r["resultado"])
-                    col_dl1, col_dl2 = st.columns(2)
+                    col_dl1, col_dl2, col_dl3 = st.columns(3)
                     with col_dl1:
                         st.download_button(
-                            "⬇️ Descargar .md",
+                            "⬇️ .md",
                             data=r["resultado"],
                             file_name=f"reporte_{r['id']}.md",
                             mime="text/markdown",
@@ -2049,11 +2109,30 @@ if opcion_menu == "🗂️ Historial":
                         pdf_b = generar_pdf(r["resultado"], r["nombre_doc"], r["usuario"],
                                             r["proveedor"], r["modelo"], stats_r)
                         st.download_button(
-                            "📄 Descargar PDF",
+                            "📄 Simple",
                             data=pdf_b,
                             file_name=f"reporte_{r['id']}.pdf",
                             mime="application/pdf",
                             key=f"pdf_{r['id']}",
+                        )
+                    with col_dl3:
+                        prof_b = generar_informe_auditoria_profesional(
+                            resultado_md=r["resultado"],
+                            nombre_empresa=r["nombre_doc"],
+                            sector="",
+                            tamano_empresa="",
+                            nombre_doc=r["nombre_doc"],
+                            usuario=r["usuario"],
+                            proveedor=r["proveedor"],
+                            modelo=r["modelo"],
+                            stats=stats_r,
+                        )
+                        st.download_button(
+                            "📄 Profesional",
+                            data=prof_b,
+                            file_name=f"informe_{r['id']}.pdf",
+                            mime="application/pdf",
+                            key=f"prof_{r['id']}",
                         )
             
             if total_paginas > 1:
