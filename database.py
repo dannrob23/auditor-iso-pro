@@ -345,7 +345,21 @@ def limpiar_vulnerabilidades_antiguas(dias: int = 90) -> int:
 
 
 def exportar_excel_respaldo(vulnerabilidades: list[dict] | None = None) -> str:
-    ...
+    """
+    Genera el Excel de respaldo en data/Matriz_Riesgos_IA.xlsx
+    Retorna la ruta del archivo generado.
+    """
+    from ingestor.excel_export import exportar_matriz_riesgos_ia
+
+    if vulnerabilidades is None:
+        vulnerabilidades = listar_vulnerabilidades(limit=9999, activa=True)
+    if not vulnerabilidades:
+        return ""
+
+    ruta = DB_PATH.parent / "Matriz_Riesgos_IA.xlsx"
+    excel_bytes = exportar_matriz_riesgos_ia(vulnerabilidades)
+    with open(ruta, "wb") as f:
+        f.write(excel_bytes)
     return str(ruta)
 
 
