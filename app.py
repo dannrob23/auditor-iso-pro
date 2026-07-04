@@ -31,8 +31,6 @@ from database import (
 from pdf_export import (
     generar_pdf,
     generar_pdf_propuesta_interoperabilidad,
-    generar_informe_auditoria_profesional,
-    generar_plantilla_informe_markdown,
 )
 from guia_auditoria import (
     ETAPAS, SECTORES_EMPRESA, TAMANOS_EMPRESA,
@@ -768,6 +766,7 @@ if opcion_menu == "✏️ Texto Libre":
                 st.download_button("📄 PDF Simple", data=pdf_bytes,
                     file_name="gap_analysis_resultado.pdf", mime="application/pdf")
             with col_pro2:
+                from pdf_export import generar_informe_auditoria_profesional
                 aud_id = st.session_state.get("auditoria_actual_id")
                 aud_data = obtener_auditoria(aud_id) if aud_id else None
                 ctrls = st.session_state.get("controles_actuales", []) if st.session_state.get("controles_aid") == aud_id else None
@@ -1001,6 +1000,7 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
                 st.markdown("### 📑 Plantilla de Informe de Auditoría")
                 st.caption("Descarga una plantilla Markdown reutilizable para informes de auditoría ISO 27001.")
                 if st.button("📝 Descargar plantilla (.md)", key="btn_plantilla"):
+                    from pdf_export import generar_plantilla_informe_markdown
                     plantilla = generar_plantilla_informe_markdown(
                         aud.get("nombre_empresa", ""),
                         aud.get("sector", ""),
@@ -2116,6 +2116,7 @@ if opcion_menu == "🗂️ Historial":
                             key=f"pdf_{r['id']}",
                         )
                     with col_dl3:
+                        from pdf_export import generar_informe_auditoria_profesional
                         prof_b = generar_informe_auditoria_profesional(
                             resultado_md=r["resultado"],
                             nombre_empresa=r["nombre_doc"],
