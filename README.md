@@ -1,6 +1,6 @@
 # 🔐 Auditor ISO/IEC 27001:2022 — Gap Analysis IA
 
-Aplicación web para realizar Gap Analysis automatizados sobre políticas de seguridad de la información usando IA (DeepSeek como motor principal).
+Aplicación web para realizar Gap Analysis automatizados sobre políticas de seguridad de la información usando **DeepSeek** como motor principal.
 
 ## ✨ Características
 
@@ -11,19 +11,31 @@ Aplicación web para realizar Gap Analysis automatizados sobre políticas de seg
 - 📊 **Tabla de Gap Analysis** con estado de evidencia y acciones correctivas
 - ⬇️ **Descarga el reporte** en formato Markdown o PDF
 
-## 🚀 Instalación local
+## 🚀 Instalación local (un solo comando)
 
+### Linux / Mac
 ```bash
 git clone https://github.com/tu-usuario/auditor-iso-pro.git
 cd auditor-iso-pro
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-pip install -r requirements.txt
+bash setup.sh
 ```
 
-## ⚙️ Configuración
+### Windows
+```powershell
+git clone https://github.com/tu-usuario/auditor-iso-pro.git
+cd auditor-iso-pro
+setup.bat
+```
 
-1. Copia el archivo de ejemplo y agrega tu API Key de DeepSeek:
+El script `setup.sh` / `setup.bat` hace automáticamente:
+1. Crea el entorno virtual
+2. Instala todas las dependencias
+3. Crea el archivo `.env` desde `.env.example`
+4. Indexa los PDFs oficiales de la base de conocimiento
+
+## ⚙️ Configuración manual (si lo necesitas)
+
+1. Copia el archivo de ejemplo y agrega tu API Key:
 ```bash
 cp .env.example .env
 # Edita .env con tu DEEPSEEK_API_KEY
@@ -54,7 +66,7 @@ streamlit run app.py
 
 ## ☁️ Deploy en Streamlit Community Cloud
 
-1. Sube el repositorio a GitHub (sin el `.env`)
+1. Sube el repositorio a GitHub (sin el `.env` — ya está en `.gitignore`)
 2. Ve a [share.streamlit.io](https://share.streamlit.io)
 3. Conecta tu repositorio
 4. En **Advanced settings → Secrets**, agrega:
@@ -65,9 +77,6 @@ DEEPSEEK_API_KEY = "sk-..."
 # Cookie secret para autenticación (genera uno aleatorio)
 COOKIE_SECRET = "un-string-secreto-aleatorio"
 ```
-
-> **Importante:** Asegúrate de que `DEEPSEEK_API_KEY` esté configurado en Secrets, ya que DeepSeek es el motor por defecto.
-
 5. Haz clic en **Deploy**
 
 ## 📁 Estructura del proyecto
@@ -79,7 +88,12 @@ auditor-iso-pro/
 ├── requirements.txt    # Dependencias
 ├── .env.example        # Plantilla de variables de entorno
 ├── .gitignore          # Archivos excluidos de Git
-└── README.md           # Este archivo
+├── setup.sh            # Setup automático (Linux/Mac)
+├── setup.bat           # Setup automático (Windows)
+├── README.md           # Este archivo
+├── knowledge_base/     # PDFs oficiales de normas (incluidos en el repo)
+├── data/               # Datos locales generados (NO incluidos en git)
+└── ...
 ```
 
 ## 🛡️ Controles evaluados (Anexo A ISO 27001:2022)
