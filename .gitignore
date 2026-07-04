@@ -33,7 +33,12 @@ __pycache__/
 # Office lock files
 .~lock.*
 
-# Distribution / packaging
+# Local Excel outputs from root project folder
+GAP.xlsx
+Matriz_Confluencia_Auditoria_IA.xlsx
+Matriz_Cumplimiento_IA_SEC_Salud.xlsx
+*.xlsx
+*.xls
 dist/
 build/
 *.egg-info/
