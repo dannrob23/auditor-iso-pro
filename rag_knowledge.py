@@ -47,6 +47,56 @@ FALLBACK_DIR.mkdir(exist_ok=True)
 FALLBACK_DIR.joinpath("official").mkdir(exist_ok=True)
 FALLBACK_DIR.joinpath("uploads").mkdir(exist_ok=True)
 
+# ── Descarga automática desde repositorio de GitHub ─────────────────────────
+_KB_REPO = os.getenv("KB_REPO", "").strip()
+
+def sincronizar_fuentes_oficiales():
+    """Descarga PDFs desde un repositorio de GitHub a knowledge_base/."""
+    if not _KB_REPO or "/" not in _KB_REPO:
+        return 0
+    owner, repo = _KB_REPO.split("/", 1)
+    token = os.getenv("GITHUB_TOKEN", "")
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    try:
+        import requests
+    except Exception:
+        return 0
+
+    try:
+        url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code != 200:
+            return 0
+        items = r.json()
+        if not isinstance(items, list):
+            return 0
+        descargados = 0
+        for item in items:
+            if item.get("type") != "file":
+                continue
+            name = item.get("name", "")
+            if not name.lower().endswith(".pdf"):
+                continue
+            destino = KB_DIR / name
+            if destino.exists():
+                continue
+            raw_url = item.get("download_url")
+            if not raw_url:
+                continue
+            try:
+                pdf_r = requests.get(raw_url, headers=headers, timeout=60)
+                if pdf_r.status_code == 200:
+                    destino.write_bytes(pdf_r.content)
+                    descargados += 1
+            except Exception:
+                continue
+        return descargados
+    except Exception:
+        return 0
+
 _embeddings_model = None
 
 def get_embeddings():

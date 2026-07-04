@@ -99,13 +99,19 @@ def _auto_descargar_fuentes():
     kb = _obtener_kb_dir()
     if kb.exists() and any(kb.glob("*.pdf")):
         return
+    # Intentar desde repo externo (variable KB_REPO)
+    from rag_knowledge import sincronizar_fuentes_oficiales
+    n = sincronizar_fuentes_oficiales()
+    if n > 0:
+        return
+    # Fallback: ZIP en GitHub Releases
     url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
     try:
         import requests
     except Exception:
         return
     try:
-        with st.spinner("Descargando fuentes oficiales de GitHub Releases..."):
+        with st.spinner("Descargando fuentes oficiales..."):
             r = requests.get(url, timeout=120)
             if r.status_code == 200:
                 import zipfile, io
