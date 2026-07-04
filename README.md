@@ -1,13 +1,13 @@
 # 🔐 Auditor ISO/IEC 27001:2022 — Gap Analysis IA
 
-Aplicación web para realizar Gap Analysis automatizados sobre políticas de seguridad de la información usando IA (GPT-4o, DeepSeek, Google Gemini o Groq gratuito).
+Aplicación web para realizar Gap Analysis automatizados sobre políticas de seguridad de la información usando IA (DeepSeek como motor principal).
 
 ## ✨ Características
 
 - 🔒 **Autenticación segura** con `streamlit-authenticator`
 - 📄 **Análisis de PDFs** — sube tu política y extrae el texto automáticamente
 - ✏️ **Texto libre** — pega el texto directamente
-- 🤖 **IA auditora** — GPT-4o, DeepSeek, Gemini o Groq (gratis) como Auditor Líder ISO 27001:2022
+- 🤖 **IA auditora** — DeepSeek como motor principal, con soporte para OpenAI y Google Gemini
 - 📊 **Tabla de Gap Analysis** con estado de evidencia y acciones correctivas
 - ⬇️ **Descarga el reporte** en formato Markdown o PDF
 
@@ -23,10 +23,10 @@ pip install -r requirements.txt
 
 ## ⚙️ Configuración
 
-1. Copia el archivo de ejemplo y agrega tu API Key:
+1. Copia el archivo de ejemplo y agrega tu API Key de DeepSeek:
 ```bash
 cp .env.example .env
-# Edita .env con al menos una API Key
+# Edita .env con tu DEEPSEEK_API_KEY
 ```
 
 2. (Opcional) Cambia usuarios/contraseñas en `config.yaml`:
@@ -40,14 +40,11 @@ python -c "import streamlit_authenticator as sa; print(sa.Hasher(['TuContraseña
 
 ## 👉 Proveedores de IA soportados
 
-| Proveedor | Modelos | Costo |
+| Proveedor | Modelos | Notas |
 |-----------|---------|-------|
-| **Groq** | llama-3.3-70b, mixtral | **Gratis** |
-| DeepSeek | deepseek-chat | Pago |
-| Google (Gemini) | gemini-1.5-pro/flash | Pago |
-| OpenAI | gpt-4o, gpt-4-turbo | Pago |
-
-> **Recomendación:** Usa **Groq (Gratis)** para probar la app sin costo.
+| **DeepSeek** (por defecto) | deepseek-chat, deepseek-coder | Motor principal, requiere API key de pago |
+| OpenAI | gpt-4o, gpt-4-turbo | Requiere API key |
+| Google (Gemini) | gemini-1.5-pro, gemini-1.5-flash | Requiere API key |
 
 ## ▶️ Ejecutar
 
@@ -62,21 +59,15 @@ streamlit run app.py
 3. Conecta tu repositorio
 4. En **Advanced settings → Secrets**, agrega:
 ```toml
-# Opción 1: Groq (Gratis) — recomendado
-GROQ_API_KEY = "gsk_..."
-
-# Opción 2: OpenAI
-OPENAI_API_KEY = "sk-..."
-
-# Opción 3: Google Gemini
-GOOGLE_API_KEY = "..."
-
-# Opción 4: DeepSeek
-DEEPSEEK_API_KEY = "..."
+# DeepSeek (motor principal)
+DEEPSEEK_API_KEY = "sk-..."
 
 # Cookie secret para autenticación (genera uno aleatorio)
 COOKIE_SECRET = "un-string-secreto-aleatorio"
 ```
+
+> **Importante:** Asegúrate de que `DEEPSEEK_API_KEY` esté configurado en Secrets, ya que DeepSeek es el motor por defecto.
+
 5. Haz clic en **Deploy**
 
 ## 📁 Estructura del proyecto
