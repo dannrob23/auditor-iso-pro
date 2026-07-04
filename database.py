@@ -79,6 +79,22 @@ def init_db():
     conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_vuln_activa ON vulnerabilidades_ia(activa)
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS auditoria_progreso (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario             TEXT NOT NULL,
+            sector              TEXT,
+            tamano_empresa      TEXT,
+            nombre_empresa      TEXT,
+            etapa_actual        TEXT DEFAULT 'gap_analysis',
+            fecha_inicio        TEXT NOT NULL,
+            fecha_actualizacion TEXT NOT NULL,
+            gap_analysis_id     INTEGER,
+            controles_json      TEXT,
+            plan_json           TEXT,
+            estado_json         TEXT DEFAULT '{}'
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -329,19 +345,82 @@ def limpiar_vulnerabilidades_antiguas(dias: int = 90) -> int:
 
 
 def exportar_excel_respaldo(vulnerabilidades: list[dict] | None = None) -> str:
-    """
-    Genera el Excel de respaldo en data/Matriz_Riesgos_IA.xlsx
-    Retorna la ruta del archivo generado.
-    """
-    from ingestor.excel_export import exportar_matriz_riesgos_ia
-
-    if vulnerabilidades is None:
-        vulnerabilidades = listar_vulnerabilidades(limit=9999, activa=True)
-    if not vulnerabilidades:
-        return ""
-
-    ruta = DB_PATH.parent / "Matriz_Riesgos_IA.xlsx"
-    excel_bytes = exportar_matriz_riesgos_ia(vulnerabilidades)
-    with open(ruta, "wb") as f:
-        f.write(excel_bytes)
+    ...
     return str(ruta)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Ruta de Auditoría ISO 27002 — persistencia del progreso
+# ══════════════════════════════════════════════════════════════════════════════
+
+def crear_auditoria(usuario: str, sector: str = "", tamano_empresa: str = "",
+                    nombre_empresa: str = "") -> int:
+    ahora = _ahora_bogota().isoformat()
+    conn = get_conn()
+    cursor = conn.execute("""
+        INSERT INTO auditoria_progreso
+            (usuario, sector, tamano_empresa, nombre_empresa, etapa_actual,
+             fecha_inicio, fecha_actualizacion, estado_json)
+        VALUES (?, ?, ?, ?, 'gap_analysis', ?, ?, '{}')
+    """, (usuario, sector, tamano_empresa, nombre_empresa, ahora, ahora))
+    conn.commit()
+    aid = cursor.lastrowid
+    conn.close()
+    return aid
+
+
+def obtener_auditorias(usuario: str) -> list[dict]:
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM auditoria_progreso WHERE usuario = ? ORDER BY id DESC",
+        (usuario,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def obtener_auditoria(auditoria_id: int) -> dict | None:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT * FROM auditoria_progreso WHERE id = ?",
+        (auditoria_id,),
+    ).fetchone()
+    conn.close()
+    if row:
+        d = dict(row)
+        for campo in ["controles_json", "plan_json", "estado_json"]:
+            val = d.get(campo)
+            if val and isinstance(val, str):
+                try:
+                    d[campo] = json.loads(val)
+                except (json.JSONDecodeError, TypeError):
+                    d[campo] = {}
+        return d
+    return None
+
+
+def actualizar_auditoria(auditoria_id: int, **kwargs):
+    ahora = _ahora_bogota().isoformat()
+    campos_permitidos = {"sector", "tamano_empresa", "nombre_empresa",
+                         "etapa_actual", "gap_analysis_id",
+                         "controles_json", "plan_json", "estado_json"}
+    sets = []
+    valores = []
+    for k, v in kwargs.items():
+        if k in campos_permitidos:
+            if k in ("controles_json", "plan_json", "estado_json"):
+                v = json.dumps(v, ensure_ascii=False)
+            sets.append(f"{k} = ?")
+            valores.append(v)
+    if not sets:
+        return
+    sets.append("fecha_actualizacion = ?")
+    valores.append(ahora)
+    valores.append(auditoria_id)
+    conn = get_conn()
+    conn.execute(
+        f"UPDATE auditoria_progreso SET {', '.join(sets)} WHERE id = ?",
+        valores,
+    )
+    conn.commit()
+    conn.close()

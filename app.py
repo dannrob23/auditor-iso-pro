@@ -26,8 +26,14 @@ from database import (
     guardar_reporte, listar_reportes, obtener_reporte, stats_globales, init_db,
     guardar_lote_vulnerabilidades, listar_vulnerabilidades, stats_vulnerabilidades,
     guardar_vulnerabilidad, limpiar_vulnerabilidades_antiguas, exportar_excel_respaldo,
+    crear_auditoria, obtener_auditorias, obtener_auditoria, actualizar_auditoria,
 )
 from pdf_export import generar_pdf, generar_pdf_propuesta_interoperabilidad
+from guia_auditoria import (
+    ETAPAS, SECTORES_EMPRESA, TAMANOS_EMPRESA,
+    obtener_controles_recomendados, generar_plan_implementacion,
+    generar_reporte_markdown, etapa_icono_estado, avanzar_etapa,
+)
 
 try:
     from rag_knowledge import (
@@ -347,6 +353,7 @@ with st.sidebar:
             "💬 Chat Auditor",
             "📄 Auditoría de IA",
             "✏️ Texto Libre",
+            "📋 Ruta de Auditoría ISO 27002",
             "📚 Base RAG",
             "🔗 Confluencia",
             "🧩 Interoperabilidad",
@@ -728,6 +735,217 @@ if opcion_menu == "✏️ Texto Libre":
                 pdf_bytes = generar_pdf(resultado, "Análisis manual", usuario, proveedor, modelo, stats)
                 st.download_button("📄 Descargar PDF", data=pdf_bytes,
                     file_name="gap_analysis_resultado.pdf", mime="application/pdf")
+
+# ── Tab Ruta de Auditoría ISO 27002 ──────────────────────────────────────────
+if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("#### 📋 Ruta de Auditoría ISO 27002")
+    st.markdown("Guía paso a paso desde el Gap Analysis hasta el establecimiento de controles ISO 27002, adaptada a cualquier empresa sin importar su tamaño o sector.")
+
+    tab1, tab2, tab3 = st.tabs(["🏢 Configurar Empresa", "🗺️ Mapa de Etapas", "📋 Controles y Plan"])
+
+    with tab1:
+        # Seleccionar o crear auditoría
+        auditorias = obtener_auditorias(usuario)
+        opciones_aud = ["➕ Nueva auditoría"] + [f"#{a['id']} - {a.get('nombre_empresa', 'Sin nombre')} ({a.get('sector', '?')})" for a in auditorias]
+        aud_seleccionada = st.selectbox("Auditoría", opciones_aud, key="aud_select", index=0)
+
+        if aud_seleccionada == "➕ Nueva auditoría":
+            if st.button("🚀 Iniciar nueva auditoría"):
+                nombre_empresa = st.session_state.get("aud_nombre", "")
+                sector = st.session_state.get("aud_sector", "")
+                tamano = st.session_state.get("aud_tamano", "")
+                if not nombre_empresa or not sector or not tamano:
+                    st.warning("Completa todos los campos antes de iniciar.")
+                else:
+                    aid = crear_auditoria(usuario, sector, tamano, nombre_empresa)
+                    st.session_state["auditoria_actual_id"] = aid
+                    st.success(f"Auditoría #{aid} creada. Ve al mapa de etapas para comenzar.")
+                    st.rerun()
+
+            with st.form("form_auditoria"):
+                st.text_input("Nombre de la empresa", key="aud_nombre")
+                st.selectbox("Sector", SECTORES_EMPRESA, key="aud_sector", index=10)
+                st.selectbox("Tamaño de la empresa", TAMANOS_EMPRESA, key="aud_tamano", index=0)
+                st.form_submit_button("Guardar datos")
+        else:
+            # Cargar auditoría existente
+            idx = int(aud_seleccionada.split(" - ")[0].lstrip("#"))
+            st.session_state["auditoria_actual_id"] = idx
+            aud = obtener_auditoria(idx)
+            if aud:
+                st.markdown(f"**Empresa:** {aud.get('nombre_empresa', '—')}")
+                st.markdown(f"**Sector:** {aud.get('sector', '—')}")
+                st.markdown(f"**Tamaño:** {aud.get('tamano_empresa', '—')}")
+                st.markdown(f"**Etapa actual:** {aud.get('etapa_actual', 'gap_analysis')}")
+                if st.button("🗑️ Eliminar esta auditoría"):
+                    conn = __import__("sqlite3", fromlist=["connect"]).connect("data/reportes.db")
+                    conn.execute("DELETE FROM auditoria_progreso WHERE id = ?", (idx,))
+                    conn.commit()
+                    conn.close()
+                    st.success("Auditoría eliminada.")
+                    st.session_state.pop("auditoria_actual_id", None)
+                    st.rerun()
+
+    with tab2:
+        aid = st.session_state.get("auditoria_actual_id")
+        if not aid:
+            st.info("Primero configura una empresa en la pestaña '🏢 Configurar Empresa'.")
+        else:
+            aud = obtener_auditoria(aid)
+            if not aud:
+                st.error("Auditoría no encontrada.")
+            else:
+                # Mostrar barra de progreso visual
+                etapas_ids = [e["id"] for e in ETAPAS]
+                etapa_actual = aud.get("etapa_actual", "gap_analysis")
+                try:
+                    progreso_actual = etapas_ids.index(etapa_actual)
+                except ValueError:
+                    progreso_actual = 0
+                pct = (progreso_actual / (len(etapas_ids) - 1)) * 100
+
+                st.markdown("### 📊 Progreso General")
+                st.progress(int(pct), text=f"Etapa {progreso_actual + 1} de {len(etapas_ids)}")
+
+                # Mostrar cada etapa con su estado
+                st.markdown("### 🗺️ Etapas de la Auditoría")
+                cols = st.columns(len(ETAPAS))
+                for i, etapa in enumerate(ETAPAS):
+                    icono = etapa_icono_estado(etapa["id"], aud)
+                    with cols[i]:
+                        st.markdown(f"#### {icono}")
+                        st.markdown(f"**{etapa['nombre']}**")
+                        st.caption(etapa["descripcion"])
+                        if i < progreso_actual:
+                            st.info("✅ Completado")
+                        elif i == progreso_actual:
+                            st.info("⏳ En curso")
+                        else:
+                            st.info("⬜ Pendiente")
+
+                # Botón para avanzar etapa
+                st.markdown("---")
+                st.markdown(f"**Etapa actual:** {ETAPAS[progreso_actual]['nombre']}")
+
+                if etapa_actual == "gap_analysis":
+                    st.info("Ejecuta un Gap Analysis en las secciones 📄 Auditoría de IA o ✏️ Texto Libre para avanzar a la siguiente etapa.")
+                    st.markdown("**Resultado del Gap Analysis:**")
+                    reportes = listar_reportes(limit=5)
+                    if reportes:
+                        for r in reportes:
+                            if st.button(f"Cargar reporte #{r['id']} ({r['nombre_doc']})", key=f"gap_load_{r['id']}"):
+                                actualizar_auditoria(aid, gap_analysis_id=r["id"])
+                                aud["gap_analysis_id"] = r["id"]
+                                aud = avanzar_etapa(aud, "gap_analysis")
+                                actualizar_auditoria(aid, etapa_actual=aud["etapa_actual"], estado_json=aud["estado_json"])
+                                st.success("¡Gap Analysis completado! Avanza a la siguiente etapa.")
+                                st.rerun()
+                    else:
+                        st.warning("No hay reportes de Gap Analysis aún. Usa 📄 Auditoría de IA o ✏️ Texto Libre para crear uno.")
+                else:
+                    if st.button("✅ Marcar etapa como completada y avanzar"):
+                        aud = avanzar_etapa(aud, etapa_actual)
+                        actualizar_auditoria(aid, etapa_actual=aud["etapa_actual"], estado_json=aud["estado_json"])
+                        st.success("¡Etapa completada! Avanza a la siguiente.")
+                        st.rerun()
+
+    with tab3:
+        aid = st.session_state.get("auditoria_actual_id")
+        if not aid:
+            st.info("Primero configura una empresa y avanza a la etapa de controles.")
+        else:
+            aud = obtener_auditoria(aid)
+            if not aud:
+                st.error("Auditoría no encontrada.")
+            else:
+                # Cargar o generar controles recomendados
+                if "controles_actuales" not in st.session_state or st.session_state.get("controles_aid") != aid:
+                    sector = aud.get("sector", "Otro")
+                    tamano = aud.get("tamano_empresa", "PYME (< 50 empleados)")
+                    brechas = []
+                    gap_id = aud.get("gap_analysis_id")
+                    if gap_id:
+                        r = obtener_reporte(gap_id)
+                        if r and r.get("resultado"):
+                            for line in r["resultado"].splitlines():
+                                line_s = line.strip()
+                                if line_s.startswith("|") and "❌" in line_s:
+                                    cells = [c.strip() for c in line_s.split("|") if c.strip()]
+                                    if cells:
+                                        brechas.append(cells[0])
+                    ctrls = obtener_controles_recomendados(sector, tamano, brechas if brechas else None)
+                    st.session_state["controles_actuales"] = ctrls
+                    st.session_state["controles_aid"] = aid
+                    plan = generar_plan_implementacion(ctrls)
+                    st.session_state["plan_actual"] = plan
+                    # Persistir
+                    actualizar_auditoria(aid, controles_json=ctrls, plan_json=plan)
+
+                ctrls = st.session_state.get("controles_actuales", [])
+                plan = st.session_state.get("plan_actual", {})
+
+                st.markdown("### 🎯 Controles Recomendados")
+                st.markdown(f"**Total:** {len(ctrls)} controles | "
+                            f"🔴 Alta: {plan.get('alta_prioridad', 0)} | "
+                            f"🟡 Media: {plan.get('media_prioridad', 0)} | "
+                            f"🟢 Baja: {plan.get('baja_prioridad', 0)}")
+
+                # Mostrar controles en un data_editor editable
+                df_ctrls = __import__("pandas", fromlist=["DataFrame"]).DataFrame(ctrls)
+                if not df_ctrls.empty:
+                    edited = st.data_editor(
+                        df_ctrls,
+                        column_config={
+                            "id": st.column_config.TextColumn("Control", width="small", disabled=True),
+                            "nombre": st.column_config.TextColumn("Nombre", width="medium", disabled=True),
+                            "categoria": st.column_config.TextColumn("Categoría", width="small", disabled=True),
+                            "prioridad": st.column_config.TextColumn("Prioridad", width="small", disabled=True),
+                            "tiempo_estimado": st.column_config.TextColumn("Tiempo", width="small", disabled=True),
+                            "descripcion": st.column_config.TextColumn("Descripción", width="large", disabled=True),
+                            "responsable_sugerido": st.column_config.TextColumn("Responsable", width="medium"),
+                            "estado": st.column_config.SelectboxColumn(
+                                "Estado",
+                                options=["pendiente", "en_progreso", "completado"],
+                                width="small",
+                            ),
+                        },
+                        hide_index=True,
+                        use_container_width=True,
+                        key="ctrl_editor",
+                    )
+                    # Guardar ediciones
+                    ctrls_editados = edited.to_dict("records")
+                    st.session_state["controles_actuales"] = ctrls_editados
+                    actualizar_auditoria(aid, controles_json=ctrls_editados)
+
+                # Generar plan de implementación
+                st.markdown("---")
+                st.markdown("### 📋 Plan de Implementación")
+                for fase in plan.get("fases", []):
+                    with st.expander(f"📁 {fase['fase']} — {fase['duracion_estimada']}"):
+                        for ctrl in fase.get("controles", []):
+                            icon_prioridad = {"alta": "🔴", "media": "🟡", "baja": "🟢"}.get(ctrl["prioridad"], "⚪")
+                            st.markdown(f"{icon_prioridad} **{ctrl['id']}**: {ctrl['nombre']} — {ctrl['tiempo_estimado']}")
+                            st.caption(f"Responsable sugerido: {ctrl.get('responsable_sugerido', '')}")
+
+                # Exportar reporte
+                st.markdown("---")
+                if st.button("📄 Generar reporte Markdown"):
+                    md = generar_reporte_markdown(aud, ctrls if isinstance(ctrls, list) else [],
+                                                  plan, aud.get("nombre_empresa", ""),
+                                                  aud.get("sector", ""), aud.get("tamano_empresa", ""))
+                    st.download_button("⬇️ Descargar (.md)", data=md,
+                                       file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.md",
+                                       mime="text/markdown")
+                    # PDF desde pdf_export
+                    from pdf_export import generar_pdf
+                    pdf_bytes = generar_pdf(md, "Plan Implementación", usuario, "", "ISO 27002", {"cumplimiento_pct": pct})
+                    st.download_button("📄 Descargar PDF", data=pdf_bytes,
+                                       file_name=f"plan_implementacion_{aud.get('nombre_empresa', 'empresa')}.pdf",
+                                       mime="application/pdf")
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab RAG (NotebookLM) ──────────────────────────────────────────────────────
 if opcion_menu == "📚 Base RAG":
