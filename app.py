@@ -420,6 +420,140 @@ div.stButton > button:hover {
   color: var(--accent-light);
   text-decoration: none;
 }
+
+/* ── Breadcrumb ── */
+.breadcrumb {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0.3rem 0 0.8rem 0;
+  font-size: 0.78rem;
+}
+.breadcrumb-item {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.breadcrumb-item.active {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.breadcrumb-sep {
+  color: rgba(255,255,255,0.12);
+  font-weight: 300;
+}
+
+/* ── Botones diferenciados ── */
+/* Botón primario (default — ya definido arriba) */
+
+/* Botón secundario */
+div.stButton.secondary > button,
+button[id*="secondary"] {
+  background: rgba(255,255,255,0.04) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-standard) !important;
+}
+div.stButton.secondary > button:hover,
+button[id*="secondary"]:hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  box-shadow: none !important;
+}
+
+/* Botón peligro */
+div.stButton.danger > button,
+button[id*="danger"] {
+  background: rgba(248,113,113,0.12) !important;
+  color: var(--danger) !important;
+  border: 1px solid rgba(248,113,113,0.25) !important;
+}
+div.stButton.danger > button:hover,
+button[id*="danger"]:hover {
+  background: rgba(248,113,113,0.2) !important;
+  border-color: rgba(248,113,113,0.4) !important;
+  box-shadow: 0 2px 10px rgba(248,113,113,0.2) !important;
+}
+
+/* ── KPI Cards mejoradas ── */
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 18px 16px;
+  text-align: left;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card:hover {
+  border-color: rgba(94,106,210,0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--accent);
+  border-radius: 3px 0 0 3px;
+  opacity: 0.5;
+}
+.kpi-icon {
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+.kpi-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  [data-testid="stSidebar"] {
+    min-width: 260px !important;
+    max-width: 260px !important;
+  }
+  section[data-testid="stSidebar"] + section {
+    margin-left: 260px !important;
+  }
+}
+@media (max-width: 768px) {
+  [data-testid="stSidebar"] {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+  .cid-title {
+    font-size: 1.1rem !important;
+  }
+  .cid-subtitle {
+    font-size: 0.72rem !important;
+  }
+  .kpi-card {
+    padding: 12px !important;
+  }
+  .kpi-value {
+    font-size: 1.3rem !important;
+  }
+  .card {
+    padding: 14px !important;
+  }
+}
+@media (max-width: 480px) {
+  .health-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .breadcrumb {
+    flex-wrap: wrap;
+  }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -569,6 +703,15 @@ st.markdown("""
         <h1 class='cid-title'>CID INFOSEC</h1>
         <p class='cid-subtitle'>Plataforma de Auditoría · ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
     </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Breadcrumb dinámico ─────────────────────────────────────────────────────
+st.markdown(f"""
+<div class='breadcrumb'>
+  <span class='breadcrumb-item'>CID INFOSEC</span>
+  <span class='breadcrumb-sep'>/</span>
+  <span class='breadcrumb-item active'>{opcion_menu}</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -2228,7 +2371,7 @@ if opcion_menu == "🔬 Autodiagnóstico":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Dashboard ─────────────────────────────────────────────────────────────
-if opcion_menu == "📊 Dashboard":
+if opcion_menu == "Dashboard":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 📊 Dashboard Consolidado 360° (Cumplimiento, Madurez y Riesgos)")
     
@@ -2359,7 +2502,7 @@ if opcion_menu == "📊 Dashboard":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Historial ─────────────────────────────────────────────────────────────
-if opcion_menu == "🗂️ Historial":
+if opcion_menu == "Historial":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 🗂️ Historial de Reportes")
     
@@ -2473,7 +2616,7 @@ if opcion_menu == "🗂️ Historial":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab 4: Logs de Auditoría ─────────────────────────────────────────────────
-if opcion_menu == "🔍 Logs":
+if opcion_menu == "Logs":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 🔍 Registro de Eventos — Control A.8.15 ISO/IEC 27001:2022")
     st.markdown("Trazabilidad completa de accesos y análisis realizados en la plataforma.")
@@ -2507,3 +2650,12 @@ if opcion_menu == "🔍 Logs":
         tabla_logs += "</table>"
         st.markdown(tabla_logs, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+# ── Footer CID INFOSEC (visible en todas las pantallas) ────────────────────
+st.markdown(f"""
+<div class='cid-footer'>
+  <strong>CID INFOSEC</strong> v2.0 — Plataforma de Auditoría de Ciberseguridad e Inteligencia Artificial<br>
+  &copy; {datetime.now().year} &middot; Banco Agrario de Colombia &middot; ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894<br>
+  <span style='font-size:0.68rem;'>Confidencial &middot; Uso interno autorizado</span>
+</div>
+""", unsafe_allow_html=True)
