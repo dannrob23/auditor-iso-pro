@@ -2391,7 +2391,7 @@ if opcion_menu == "Dashboard":
         return f"<div class='metric-box'><div class='metric-value' style='color:{color}'>{val}</div><div class='metric-label'>{label}</div></div>"
     
     c1.markdown(metric_html(total_r, "Políticas Auditadas", "#a78bfa"), unsafe_allow_html=True)
-    c2.markdown(metric_html(f"{sg.get('avg_cumplimiento', 0.0):.1f}%", "Cumplimiento Promedio (Gap)", "#34d399"), unsafe_allow_html=True)
+    c2.markdown(metric_html(f"{(sg.get('avg_cumplimiento') or 0.0):.1f}%", "Cumplimiento Promedio (Gap)", "#34d399"), unsafe_allow_html=True)
     c3.markdown(metric_html(f"{pct_madurez:.1f}%" if pct_madurez > 0 else "N/A", f"Madurez: {nivel_madurez}", "#60a5fa"), unsafe_allow_html=True)
     c4.markdown(metric_html(total_v, "Vulnerabilidades IA Activas", "#fb923c" if total_v > 0 else "#34d399"), unsafe_allow_html=True)
 
