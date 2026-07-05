@@ -131,180 +131,294 @@ _auto_descargar_fuentes()
 
 # ── Configuración de página ──────────────────────────────────────────────────
 st.set_page_config(
-    page_title="IA-SEC Auditor Tool | ISO 27001 · 42001 · NIST · 19011 · 23894",
-    page_icon="🤖",
+    page_title="CID INFOSEC | Auditor de Ciberseguridad e IA",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── CSS personalizado ────────────────────────────────────────────────────────
+# ── CSS personalizado — Sistema de diseño CID INFOSEC ────────────────────────
+# Inspirado en Linear: dark-mode-native, Inter, bordes sutiles, acento indigo
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+:root {
+  --bg-canvas: #08090a;
+  --bg-panel: #0f1011;
+  --bg-surface: #191a1b;
+  --bg-elevated: #28282c;
+  --text-primary: #f7f8f8;
+  --text-secondary: #d0d6e0;
+  --text-tertiary: #8a8f98;
+  --text-muted: #62666d;
+  --accent: #5e6ad2;
+  --accent-hover: #7170ff;
+  --accent-light: #828fff;
+  --border-subtle: rgba(255,255,255,0.05);
+  --border-standard: rgba(255,255,255,0.08);
+  --success: #10b981;
+  --warning: #fbbf24;
+  --danger: #f87171;
+}
 
-/* Fondo general */
+html, body, [class*="css"] {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: "cv01", "ss03";
+}
+
+/* ── Fondo general ── */
 .stApp {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-    min-height: 100vh;
+  background: var(--bg-canvas);
+  min-height: 100vh;
 }
 
-/* Sidebar */
+/* ── Sidebar ── */
 [data-testid="stSidebar"] {
-    background: rgba(15,12,41,0.85);
-    border-right: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(12px);
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-subtle);
 }
 
-/* Tarjetas con animación de entrada */
+/* ── Tarjetas ── */
 .card {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-    backdrop-filter: blur(10px);
-    animation: fadeIn 0.4s ease;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-standard);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s ease;
 }
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Onboarding card */
+/* ── Onboarding ── */
 .onboarding-card {
-    background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(37,99,235,0.15));
-    border: 1px solid rgba(124,58,237,0.4);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 20px;
+  background: rgba(94,106,210,0.08);
+  border: 1px solid rgba(94,106,210,0.25);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
 }
-.onboarding-card h3 { color: #a78bfa; margin-bottom: 8px; }
+.onboarding-card h3 { color: var(--accent-light); margin-bottom: 8px; font-size: 1.1rem; font-weight: 600; }
 .onboarding-step {
-    display: flex; align-items: center; gap: 10px;
-    padding: 6px 0; font-size: 0.9rem; color: rgba(255,255,255,0.82);
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; font-size: 0.88rem; color: var(--text-secondary);
 }
 .step-num {
-    background: rgba(124,58,237,0.4); color: #a78bfa;
-    border-radius: 50%; width: 24px; height: 24px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  background: rgba(94,106,210,0.2); color: var(--accent-light);
+  border-radius: 50%; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 600; flex-shrink: 0;
 }
 
-/* Health bar del sistema */
+/* ── Health bar ── */
 .health-bar {
-    display: flex; gap: 12px; flex-wrap: wrap;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 10px 18px;
-    margin-bottom: 16px;
-    align-items: center;
+  display: flex; gap: 16px; flex-wrap: wrap;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  align-items: center;
 }
 .health-item {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 0.82rem; color: rgba(255,255,255,0.75);
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; color: var(--text-tertiary);
 }
 .health-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    display: inline-block;
-    box-shadow: 0 0 6px currentColor;
+  width: 7px; height: 7px; border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 4px currentColor;
 }
-.dot-green  { background: #34d399; color: #34d399; }
-.dot-yellow { background: #fbbf24; color: #fbbf24; }
-.dot-red    { background: #f87171; color: #f87171; }
+.dot-green  { background: var(--success); color: var(--success); }
+.dot-yellow { background: var(--warning); color: var(--warning); }
+.dot-red    { background: var(--danger); color: var(--danger); }
 
-/* Header principal */
-.main-header { text-align: center; padding: 1.5rem 0 0.5rem 0; }
-.main-header h1 {
-    font-size: 2.2rem; font-weight: 700;
-    background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    margin-bottom: 0.3rem;
+/* ── Header CID INFOSEC ── */
+.cid-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 1.2rem 0 0.6rem 0;
 }
-.main-header p { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
+.cid-logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(94,106,210,0.35);
+}
+.cid-title {
+  font-size: 1.4rem; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+.cid-subtitle {
+  font-size: 0.82rem; color: var(--text-tertiary);
+  margin: 0; letter-spacing: 0.02em;
+}
 
-/* Badges */
+/* ── Badges ── */
 .badge {
-    display: inline-block; padding: 3px 10px;
-    border-radius: 999px; font-size: 0.76rem; font-weight: 600;
+  display: inline-block; padding: 2px 8px;
+  border-radius: 999px; font-size: 0.74rem; font-weight: 500;
 }
-.badge-red    { background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
-.badge-yellow { background: rgba(234,179,8,0.2);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.4); }
-.badge-green  { background: rgba(52,211,153,0.2); color: #34d399; border: 1px solid rgba(52,211,153,0.4); }
-.badge-orange { background: rgba(234,88,12,0.2);  color: #fb923c; border: 1px solid rgba(234,88,12,0.4); }
+.badge-red    { background: rgba(248,113,113,0.12); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+.badge-yellow { background: rgba(251,191,36,0.12);  color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
+.badge-green  { background: rgba(16,185,129,0.12);  color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+.badge-orange { background: rgba(251,146,60,0.12);  color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
 
-/* Tabla de resultados */
+/* ── Tabla de resultados ── */
 .result-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
 .result-table th {
-    background: rgba(167,139,250,0.2); color: #a78bfa;
-    padding: 10px 14px; text-align: left;
-    font-size: 0.83rem; font-weight: 600;
-    border-bottom: 2px solid rgba(167,139,250,0.3);
+  background: var(--bg-surface); color: var(--text-tertiary);
+  padding: 10px 14px; text-align: left;
+  font-size: 0.8rem; font-weight: 500;
+  border-bottom: 1px solid var(--border-standard);
+  letter-spacing: 0.02em;
 }
 .result-table td {
-    padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.85); font-size: 0.86rem; vertical-align: top;
+  padding: 10px 14px; border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary); font-size: 0.85rem; vertical-align: top;
 }
-.result-table tr:hover td { background: rgba(255,255,255,0.04); }
+.result-table tr:hover td { background: rgba(255,255,255,0.02); }
 
-/* Métricas */
+/* ── Métricas ── */
 .metric-box {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px; padding: 18px; text-align: center;
-    transition: border-color 0.2s ease;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px; padding: 16px; text-align: center;
+  transition: border-color 0.2s ease;
 }
-.metric-box:hover { border-color: rgba(167,139,250,0.35); }
-.metric-box .metric-value { font-size: 2rem; font-weight: 700; color: #a78bfa; }
-.metric-box .metric-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.metric-box:hover { border-color: rgba(94,106,210,0.3); }
+.metric-box .metric-value { font-size: 1.8rem; font-weight: 600; color: var(--accent-light); }
+.metric-box .metric-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
 
-/* Paginación */
-.pag-info { color: rgba(255,255,255,0.5); font-size: 0.85rem; text-align: center; padding: 8px; }
+/* ── Paginación ── */
+.pag-info { color: var(--text-muted); font-size: 0.82rem; text-align: center; padding: 8px; }
 
-/* Botón principal */
+/* ── Botones ── */
 div.stButton > button {
-    background: linear-gradient(135deg, #7c3aed, #2563eb);
-    color: white; border: none; border-radius: 10px;
-    padding: 10px 24px; font-weight: 600; font-size: 0.95rem;
-    transition: all 0.25s ease; width: 100%;
+  background: var(--accent);
+  color: #ffffff; border: none; border-radius: 6px;
+  padding: 8px 16px; font-weight: 500; font-size: 0.88rem;
+  transition: all 0.2s ease; width: 100%;
 }
 div.stButton > button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(124,58,237,0.4);
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(94,106,210,0.3);
 }
 
-/* Ocultar solo el menu hamburguesa y footer de Streamlit */
-#MainMenu, footer, header { visibility: hidden; }
+/* ── Ocultar elementos nativos innecesarios ── */
+#MainMenu, footer { visibility: hidden; }
 
-/* Sidebar fijo, sin opción de colapsar */
+/* ── Sidebar: permitir colapso nativo ── */
 [data-testid="stSidebar"] {
-    min-width: 300px !important;
-    max-width: 300px !important;
-    margin-left: 0 !important;
-    transform: translateX(0px) !important;
-    position: relative !important;
-    visibility: visible !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
 }
 [data-testid="stSidebarContent"] {
-    overflow-y: auto !important;
-    padding: 1rem !important;
+  overflow-y: auto !important;
+  padding: 1rem !important;
 }
-/* Ocultar el botón de colapso completamente (varios selectores para compatibilidad) */
-[data-testid="collapsedControl"],
-button[data-testid="baseButton-header"],
-section[data-testid="stSidebar"] + div > button,
-[data-testid="stBaseButton-header"] {
-    display: none !important;
+
+/* ── Radio buttons del sidebar (navegación) ── */
+[data-testid="stSidebar"] [data-testid="stRadio"] {
+  gap: 0 !important;
 }
-/* Forzar que el contenido principal respete el sidebar */
-section[data-testid="stSidebar"] + section {
-    margin-left: 300px !important;
+[data-testid="stSidebar"] [data-testid="stRadio"] > div {
+  gap: 2px !important;
 }
-/* Ajustar el botón de menú hamburguesa */
-button[kind="header"] {
-    display: none !important;
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+  font-size: 0.84rem !important;
+  color: var(--text-tertiary) !important;
+  padding: 6px 10px !important;
+  border-radius: 4px !important;
+  transition: all 0.15s ease !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+  background: rgba(255,255,255,0.04) !important;
+  color: var(--text-secondary) !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"] {
+  background: rgba(94,106,210,0.12) !important;
+  color: var(--accent-light) !important;
+}
+
+/* ── Selectbox estilo minimalista ── */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-standard) !important;
+  border-radius: 6px !important;
+}
+
+/* ── Login screen ── */
+.cid-login-container {
+  max-width: 420px;
+  margin: 4rem auto;
+  padding: 2.5rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-standard);
+  border-radius: 12px;
+  text-align: center;
+}
+.cid-login-logo {
+  width: 56px; height: 56px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  margin: 0 auto 1.2rem auto;
+  box-shadow: 0 4px 24px rgba(94,106,210,0.3);
+}
+.cid-login-title {
+  font-size: 1.5rem; font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  margin-bottom: 0.4rem;
+}
+.cid-login-subtitle {
+  font-size: 0.85rem; color: var(--text-tertiary);
+  margin-bottom: 2rem;
+}
+.cid-login-frameworks {
+  font-size: 0.76rem; color: var(--text-muted);
+  letter-spacing: 0.03em;
+  margin-top: 1.5rem; padding-top: 1.2rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ── Chat input ── */
+[data-testid="stChatInput"] textarea {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-standard) !important;
+  border-radius: 6px !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Expander ── */
+[data-testid="stExpander"] {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 6px !important;
+}
+
+/* ── Footer CID INFOSEC ── */
+.cid-footer {
+  text-align: center;
+  padding: 2rem 0 1rem 0;
+  margin-top: 3rem;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+.cid-footer a {
+  color: var(--accent-light);
+  text-decoration: none;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -329,10 +443,13 @@ if st.session_state.get("authentication_status") is False:
 
 if st.session_state.get("authentication_status") is None:
     st.markdown("""
-    <div class='main-header'>
-        <h1>🤖 IA-SEC Auditor Tool</h1>
-        <p>Framework de Auditoría de IA para Infraestructura Crítica · Acceso restringido</p>
-        <p style='font-size:0.85rem; opacity:0.7;'>ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
+    <div class='cid-login-container'>
+        <div class='cid-login-logo'>🛡️</div>
+        <h1 class='cid-login-title'>CID INFOSEC</h1>
+        <p class='cid-login-subtitle'>Plataforma de Auditoría de Ciberseguridad e Inteligencia Artificial</p>
+        <div class='cid-login-frameworks'>
+            ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894
+        </div>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
@@ -348,38 +465,43 @@ if not st.session_state.get("_login_logged"):
 
 # ── Sidebar ──────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown(f"### 👤 {nombre}")
-    st.markdown("---")
-    st.markdown("**🛡️ IA-SEC Auditor Tool**")
-    st.markdown("Framework de Auditoría de IA para Infraestructura Crítica")
-    st.markdown("ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894")
+    st.markdown(f"""
+    <div style='display:flex;align-items:center;gap:10px;margin-bottom:0.4rem;'>
+        <div style='width:28px;height:28px;background:linear-gradient(135deg,#5e6ad2,#7170ff);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;'>🛡️</div>
+        <span style='font-size:0.95rem;font-weight:600;color:#f7f8f8;letter-spacing:-0.3px;'>CID INFOSEC</span>
+    </div>
+    <p style='font-size:0.76rem;color:#8a8f98;margin:0 0 0.8rem 0;'>Auditoría de Ciberseguridad e IA</p>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"**{nombre}**")
+    st.markdown(f"<span style='font-size:0.76rem;color:#62666d;'>{usuario}</span>", unsafe_allow_html=True)
     st.markdown("---")
 
-    st.markdown("**🧭 Navegación**")
-    opcion_menu = st.selectbox(
-        "Ir a...",
+    st.markdown("<p style='font-size:0.74rem;color:#62666d;letter-spacing:0.05em;text-transform:uppercase;font-weight:500;margin-bottom:0.5rem;'>Navegación</p>", unsafe_allow_html=True)
+    opcion_menu = st.radio(
+        "Navegación",
         [
-            "💬 Chat Auditor",
-            "📄 Auditoría de IA",
-            "✏️ Texto Libre",
-            "📋 Ruta de Auditoría ISO 27002",
-            "📚 Base RAG",
-            "🔗 Confluencia",
-            "🧩 Interoperabilidad",
-            "🛡️ Matriz Riesgos IA",
-            "🔬 Autodiagnóstico",
-            "📊 Dashboard",
-            "🗂️ Historial",
-            "ℹ️ Guía",
-            "🎓 Rol Auditor",
-            "🔍 Logs",
+            "Chat Auditor",
+            "Auditoría de IA",
+            "Texto Libre",
+            "Ruta ISO 27002",
+            "Base RAG",
+            "Confluencia",
+            "Interoperabilidad",
+            "Matriz Riesgos IA",
+            "Autodiagnóstico",
+            "Dashboard",
+            "Historial",
+            "Guía",
+            "Rol Auditor",
+            "Logs",
         ],
         index=0,
         key="nav_modulo",
         label_visibility="collapsed",
     )
     st.markdown("---")
-    st.markdown("### 📥 Entregables del Auditor")
+    st.markdown("<p style='font-size:0.74rem;color:#62666d;letter-spacing:0.05em;text-transform:uppercase;font-weight:500;margin-bottom:0.5rem;'>Entregables</p>", unsafe_allow_html=True)
     try:
         ruta_confluencia = Path("Matriz_Confluencia_Auditoria_IA.xlsx")
         if ruta_confluencia.exists():
@@ -441,9 +563,12 @@ with st.sidebar:
 
 # ── Encabezado principal ─────────────────────────────────────────────────────
 st.markdown("""
-<div class='main-header'>
-    <h1>🤖 IA-SEC Auditor Tool</h1>
-    <p>Framework de Auditoría de IA · ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
+<div class='cid-header'>
+    <div class='cid-logo'>🛡️</div>
+    <div>
+        <h1 class='cid-title'>CID INFOSEC</h1>
+        <p class='cid-subtitle'>Plataforma de Auditoría · ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -642,7 +767,7 @@ def ejecutar_chat(mensajes_historial: list, proveedor: str, modelo_llm: str, tem
 # Eliminamos st.tabs y usamos opcion_menu del sidebar
 
 # ── Tab 0: Chat Auditor ──────────────────────────────────────────────────────
-if opcion_menu == "💬 Chat Auditor":
+if opcion_menu == "Chat Auditor":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 💬 Chat Interactivo con el Auditor")
     st.info(f"Modelo actual: **{proveedor} / {modelo}**")
@@ -667,7 +792,7 @@ if opcion_menu == "💬 Chat Auditor":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab 1: Subir PDF ─────────────────────────────────────────────────────────
-if opcion_menu == "📄 Auditoría de IA":
+if opcion_menu == "Auditoría de IA":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 📂 Sube tu política de seguridad (PDF)")
     archivo = st.file_uploader(
@@ -736,7 +861,7 @@ if opcion_menu == "📄 Auditoría de IA":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab 2: Texto libre ───────────────────────────────────────────────────────
-if opcion_menu == "✏️ Texto Libre":
+if opcion_menu == "Texto Libre":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### ✏️ Pega el texto de tu política directamente")
     texto_manual = st.text_area(
@@ -788,7 +913,7 @@ if opcion_menu == "✏️ Texto Libre":
                     file_name="informe_auditoria_manual.pdf", mime="application/pdf")
 
 # ── Tab Ruta de Auditoría ISO 27002 ──────────────────────────────────────────
-if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
+if opcion_menu == "Ruta ISO 27002":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 📋 Ruta de Auditoría ISO 27002")
     st.markdown("Guía paso a paso desde el Gap Analysis hasta el establecimiento de controles ISO 27002, adaptada a cualquier empresa sin importar su tamaño o sector.")
@@ -1210,7 +1335,7 @@ if opcion_menu == "📋 Ruta de Auditoría ISO 27002":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab RAG (NotebookLM) ──────────────────────────────────────────────────────
-if opcion_menu == "📚 Base RAG":
+if opcion_menu == "Base RAG":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 📚 Base de Conocimiento Oficial (Modo NotebookLM)")
     st.markdown("Sube los PDFs oficiales de la norma ISO/IEC 27001 a la carpeta `knowledge_base/` para que la IA ancle sus respuestas a la realidad.")
@@ -1318,7 +1443,7 @@ if opcion_menu == "📚 Base RAG":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Confluencia ──────────────────────────────────────────────────────────
-if opcion_menu == "🔗 Confluencia":
+if opcion_menu == "Confluencia":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 🔗 Confluencia Normativa IA-SEC")
     st.markdown("**ISO 27001 + NIST AI RMF + ISO 42001 + ISO 19011 + ISO 23894** — 5 marcos integrados")
@@ -1350,7 +1475,7 @@ if opcion_menu == "🔗 Confluencia":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Interoperabilidad ─────────────────────────────────────────────────────
-if opcion_menu == "🧩 Interoperabilidad":
+if opcion_menu == "Interoperabilidad":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 🧩 Matriz de Confluencia Normativa IA-SEC")
     st.markdown("**Herramienta de apoyo al auditor** — ISO/IEC 27001:2022 + ISO/IEC 42001:2023 + NIST AI RMF 1.0")
@@ -1662,21 +1787,21 @@ if opcion_menu == "🧩 Interoperabilidad":
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Guía (Enriquecida con ISO 19011 e ISO 23894) ────────────────────────
-if opcion_menu == "ℹ️ Guía":
+if opcion_menu == "Guía":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     from guia_auditor import mostrar_guia_mejorada
     mostrar_guia_mejorada()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Rol del Auditor (ISO 19011 + ISO 23894 + Base de Conocimiento) ─────
-if opcion_menu == "🎓 Rol Auditor":
+if opcion_menu == "Rol Auditor":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     from guia_auditor import mostrar_rol_auditor
     mostrar_rol_auditor()
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Tab Matriz de Riesgos IA ──────────────────────────────────────────────
-if opcion_menu == "🛡️ Matriz Riesgos IA":
+if opcion_menu == "Matriz Riesgos IA":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("#### 🛡️ Matriz de Riesgos de Inteligencia Artificial")
     st.markdown("""
