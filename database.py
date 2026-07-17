@@ -29,6 +29,7 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reportes (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id   TEXT DEFAULT 'default',
             created_at  TEXT NOT NULL,
             usuario     TEXT NOT NULL,
             fuente      TEXT NOT NULL,
@@ -82,6 +83,7 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS auditoria_progreso (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id           TEXT DEFAULT 'default',
             usuario             TEXT NOT NULL,
             sector              TEXT,
             tamano_empresa      TEXT,
@@ -95,6 +97,17 @@ def init_db():
             estado_json         TEXT DEFAULT '{}'
         )
     """)
+    
+    # Migraciones para multi-tenancy
+    try:
+        conn.execute("ALTER TABLE reportes ADD COLUMN tenant_id TEXT DEFAULT 'default'")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE auditoria_progreso ADD COLUMN tenant_id TEXT DEFAULT 'default'")
+    except sqlite3.OperationalError:
+        pass
+        
     conn.commit()
     conn.close()
 
@@ -131,15 +144,16 @@ def parsear_stats(resultado: str) -> dict:
 
 
 def guardar_reporte(usuario: str, fuente: str, nombre_doc: str,
-                    proveedor: str, modelo: str, resultado: str):
+                    proveedor: str, modelo: str, resultado: str, tenant_id: str = "default"):
     stats = parsear_stats(resultado)
     conn = get_conn()
     conn.execute("""
         INSERT INTO reportes
-            (created_at, usuario, fuente, nombre_doc, proveedor, modelo,
+            (tenant_id, created_at, usuario, fuente, nombre_doc, proveedor, modelo,
              resultado, conformes, parciales, no_conformes, cumplimiento_pct)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
+        tenant_id,
         datetime.now(timezone.utc).isoformat(),
         usuario, fuente, nombre_doc, proveedor, modelo, resultado,
         stats["conformes"], stats["parciales"], stats["no_conformes"],
@@ -150,25 +164,25 @@ def guardar_reporte(usuario: str, fuente: str, nombre_doc: str,
     return stats
 
 
-def listar_reportes(limit: int = 50) -> list[dict]:
+def listar_reportes(limit: int = 50, tenant_id: str = "default") -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
-        "SELECT * FROM reportes ORDER BY id DESC LIMIT ?", (limit,)
+        "SELECT * FROM reportes WHERE tenant_id = ? ORDER BY id DESC LIMIT ?", (tenant_id, limit)
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def obtener_reporte(reporte_id: int) -> dict | None:
+def obtener_reporte(reporte_id: int, tenant_id: str = "default") -> dict | None:
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM reportes WHERE id = ?", (reporte_id,)
+        "SELECT * FROM reportes WHERE id = ? AND tenant_id = ?", (reporte_id, tenant_id)
     ).fetchone()
     conn.close()
     return dict(row) if row else None
 
 
-def stats_globales() -> dict:
+def stats_globales(tenant_id: str = "default") -> dict:
     conn = get_conn()
     row = conn.execute("""
         SELECT
@@ -179,7 +193,8 @@ def stats_globales() -> dict:
             AVG(cumplimiento_pct) as avg_cumplimiento,
             COUNT(DISTINCT usuario) as total_usuarios
         FROM reportes
-    """).fetchone()
+        WHERE tenant_id = ?
+    """, (tenant_id,)).fetchone()
     conn.close()
     return dict(row) if row else {}
 
@@ -368,36 +383,36 @@ def exportar_excel_respaldo(vulnerabilidades: list[dict] | None = None) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def crear_auditoria(usuario: str, sector: str = "", tamano_empresa: str = "",
-                    nombre_empresa: str = "") -> int:
+                    nombre_empresa: str = "", tenant_id: str = "default") -> int:
     ahora = _ahora_bogota().isoformat()
     conn = get_conn()
     cursor = conn.execute("""
         INSERT INTO auditoria_progreso
-            (usuario, sector, tamano_empresa, nombre_empresa, etapa_actual,
+            (tenant_id, usuario, sector, tamano_empresa, nombre_empresa, etapa_actual,
              fecha_inicio, fecha_actualizacion, estado_json)
-        VALUES (?, ?, ?, ?, 'gap_analysis', ?, ?, '{}')
-    """, (usuario, sector, tamano_empresa, nombre_empresa, ahora, ahora))
+        VALUES (?, ?, ?, ?, ?, 'gap_analysis', ?, ?, '{}')
+    """, (tenant_id, usuario, sector, tamano_empresa, nombre_empresa, ahora, ahora))
     conn.commit()
     aid = cursor.lastrowid
     conn.close()
     return aid
 
 
-def obtener_auditorias(usuario: str) -> list[dict]:
+def obtener_auditorias(usuario: str, tenant_id: str = "default") -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
-        "SELECT * FROM auditoria_progreso WHERE usuario = ? ORDER BY id DESC",
-        (usuario,),
+        "SELECT * FROM auditoria_progreso WHERE usuario = ? AND tenant_id = ? ORDER BY id DESC",
+        (usuario, tenant_id),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def obtener_auditoria(auditoria_id: int) -> dict | None:
+def obtener_auditoria(auditoria_id: int, tenant_id: str = "default") -> dict | None:
     conn = get_conn()
     row = conn.execute(
-        "SELECT * FROM auditoria_progreso WHERE id = ?",
-        (auditoria_id,),
+        "SELECT * FROM auditoria_progreso WHERE id = ? AND tenant_id = ?",
+        (auditoria_id, tenant_id),
     ).fetchone()
     conn.close()
     if row:
@@ -413,7 +428,7 @@ def obtener_auditoria(auditoria_id: int) -> dict | None:
     return None
 
 
-def actualizar_auditoria(auditoria_id: int, **kwargs):
+def actualizar_auditoria(auditoria_id: int, tenant_id: str = "default", **kwargs):
     ahora = _ahora_bogota().isoformat()
     campos_permitidos = {"sector", "tamano_empresa", "nombre_empresa",
                          "etapa_actual", "gap_analysis_id",
@@ -431,9 +446,10 @@ def actualizar_auditoria(auditoria_id: int, **kwargs):
     sets.append("fecha_actualizacion = ?")
     valores.append(ahora)
     valores.append(auditoria_id)
+    valores.append(tenant_id)
     conn = get_conn()
     conn.execute(
-        f"UPDATE auditoria_progreso SET {', '.join(sets)} WHERE id = ?",
+        f"UPDATE auditoria_progreso SET {', '.join(sets)} WHERE id = ? AND tenant_id = ?",
         valores,
     )
     conn.commit()

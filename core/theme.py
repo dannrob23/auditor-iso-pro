@@ -1,0 +1,8 @@
+import streamlit as st
+from pathlib import Path
+
+
+def apply_theme():
+    css_path = Path(__file__).parent.parent / "styles" / "theme.css"
+    if css_path.exists():
+        st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)

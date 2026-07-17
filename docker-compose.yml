@@ -1,0 +1,14 @@
+services:
+  auditor-iso-pro:
+    build: .
+    container_name: auditai-pro
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./knowledge_base:/app/knowledge_base
+    env_file:
+      - .env
+    restart: unless-stopped
