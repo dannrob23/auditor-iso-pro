@@ -17,44 +17,47 @@ def ahora_bogota():
 init_db()
 load_dotenv()
 
+from core.logo import get_logo_html, get_logo_base64
+
 def _obtener_kb_dir():
     return Path("knowledge_base")
 
+@st.cache_resource
 def _auto_descargar_fuentes():
     kb = _obtener_kb_dir()
     if kb.exists() and any(kb.glob("*.pdf")):
-        return
-    # Intentar desde repo externo (variable KB_REPO)
+        return True
     from rag_knowledge import sincronizar_fuentes_oficiales
     n = sincronizar_fuentes_oficiales()
     if n > 0:
-        return
-    # Fallback: ZIP en GitHub Releases
+        return True
     url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
     try:
         import requests
     except Exception:
-        return
+        return False
     try:
-        with st.spinner("Descargando fuentes oficiales..."):
-            r = requests.get(url, timeout=120)
-            if r.status_code == 200:
-                import zipfile, io
-                kb.mkdir(exist_ok=True)
-                with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-                    for member in z.namelist():
-                        if member.endswith(".pdf"):
-                            target = kb / member.split("/")[-1]
-                            target.write_bytes(z.read(member))
+        r = requests.get(url, timeout=60)
+        if r.status_code == 200:
+            import zipfile, io
+            kb.mkdir(exist_ok=True)
+            with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                for member in z.namelist():
+                    if member.endswith(".pdf"):
+                        target = kb / member.split("/")[-1]
+                        target.write_bytes(z.read(member))
+            return True
     except Exception:
         pass
+    return False
 
 _auto_descargar_fuentes()
 
 # ── Configuración de página ──────────────────────────────────────────────────
+_icon_img = "assets/logo.png" if Path("assets/logo.png").exists() else "🛡️"
 st.set_page_config(
-    page_title="AuditAI Pro | Auditor de Ciberseguridad e IA",
-    page_icon="🛡️",
+    page_title="AuditAI Pro | Auditoría de Ciberseguridad e IA",
+    page_icon=_icon_img,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -63,7 +66,7 @@ from core.theme import apply_theme
 apply_theme()
 
 # ── Autenticación ────────────────────────────────────────────────────────────
-with open("config.yaml") as f:
+with open("config.yaml", encoding="utf-8") as f:
     config = yaml.load(f, Loader=SafeLoader)
 
 authenticator = stauth.Authenticate(
@@ -81,13 +84,14 @@ if st.session_state.get("authentication_status") is False:
     st.stop()
 
 if st.session_state.get("authentication_status") is None:
-    st.markdown("""
+    logo_login_html = get_logo_html(size_px=80, extra_class="login-logo-hero")
+    st.markdown(f"""
     <div class='cid-login-container'>
-        <div class='cid-login-logo'>🛡️</div>
+        <div class='cid-login-logo'>{logo_login_html}</div>
         <h1 class='cid-login-title'>AuditAI Pro</h1>
         <p class='cid-login-subtitle'>Plataforma de Auditoría de Ciberseguridad e Inteligencia Artificial</p>
         <div class='cid-login-frameworks'>
-            ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894
+            ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -105,12 +109,13 @@ if not st.session_state.get("_login_logged"):
 from components.sidebar import render_sidebar
 opcion_menu, proveedor, modelo, temperatura, usar_rag = render_sidebar(nombre, usuario, authenticator)
 # ── Encabezado principal ─────────────────────────────────────────────────────
-st.markdown("""
+header_logo_html = get_logo_html(size_px=48, extra_class="header-logo-img")
+st.markdown(f"""
 <div class='cid-header'>
-    <div class='cid-logo'>🛡️</div>
+    <div class='cid-logo-wrapper'>{header_logo_html}</div>
     <div>
         <h1 class='cid-title'>AuditAI Pro</h1>
-        <p class='cid-subtitle'>Plataforma de Auditoría · ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
+        <p class='cid-subtitle'>Plataforma Enterprise &middot; ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894</p>
     </div>
 </div>
 """, unsafe_allow_html=True)

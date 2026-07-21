@@ -1,27 +1,28 @@
 import streamlit as st
 from pathlib import Path
 from rag_knowledge import base_conocimiento_activa
+from core.logo import get_logo_html
 
 MENU_GROUPS = [
-    ("ANÁLISIS", [
+    ("🔍 AUDITORÍA & ANÁLISIS", [
         ("📄 Auditoría de IA", "Auditoría de IA"),
         ("💬 Chat Auditor", "Chat Auditor"),
-    ]),
-    ("HERRAMIENTAS", [
         ("📝 Texto Libre", "Texto Libre"),
         ("🛣️ Ruta ISO 27002", "Ruta ISO 27002"),
+    ]),
+    ("📚 BASE DE CONOCIMIENTO & RAG", [
         ("📚 Base RAG", "Base RAG"),
         ("🔗 Confluencia", "Confluencia"),
         ("🔄 Interoperabilidad", "Interoperabilidad"),
     ]),
-    ("GESTIÓN", [
+    ("📊 GESTIÓN & ANALÍTICA", [
         ("📈 Dashboard", "Dashboard"),
+        ("🛡️ Matriz Riesgos IA", "Matriz Riesgos IA"),
         ("📜 Historial", "Historial"),
         ("📖 Guía", "Guía"),
         ("🎓 Rol Auditor", "Rol Auditor"),
-        ("🛡️ Matriz Riesgos IA", "Matriz Riesgos IA"),
     ]),
-    ("SISTEMA", [
+    ("⚙️ SISTEMA & SALUD", [
         ("🚨 Threat Intelligence", "🔴 Threat Intelligence"),
         ("🧪 Autodiagnóstico", "🔬 Autodiagnóstico"),
         ("📋 Logs", "Logs"),
@@ -30,18 +31,26 @@ MENU_GROUPS = [
 
 def render_sidebar(nombre, usuario, authenticator):
     with st.sidebar:
+        logo_img = get_logo_html(size_px=42, extra_class="sidebar-logo-shadow")
         st.markdown(f"""
         <div class='sidebar-brand'>
-            <div class='sidebar-brand-icon'>🛡️</div>
+            <div class='sidebar-brand-icon-wrapper'>{logo_img}</div>
             <div>
                 <div class='sidebar-brand-title'>AuditAI Pro</div>
-                <div class='sidebar-brand-sub'>Auditoría de Ciberseguridad e IA</div>
+                <div class='sidebar-brand-sub'>Plataforma de Auditoría & IA</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown(f"**{nombre}**")
-        st.markdown(f"<span style='font-size:0.76rem;color:#62666d;'>{usuario}</span>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='user-profile-badge'>
+            <div class='user-avatar'>👤</div>
+            <div class='user-info'>
+                <div class='user-name'>{nombre}</div>
+                <div class='user-role'>{usuario} &middot; <span style="color:#10b981;">Auditor Activo</span></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown("<div class='nav-sidebar-separator'></div>", unsafe_allow_html=True)
 
         current_route = st.session_state.get("_last_menu", "Chat Auditor")
@@ -68,7 +77,7 @@ def render_sidebar(nombre, usuario, authenticator):
 
         st.markdown("<div class='nav-sidebar-separator'></div>", unsafe_allow_html=True)
 
-        st.markdown("<p style='font-size:0.74rem;color:#62666d;letter-spacing:0.05em;text-transform:uppercase;font-weight:500;margin-bottom:0.5rem;'>Entregables</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:0.74rem;color:#8a8f98;letter-spacing:0.05em;text-transform:uppercase;font-weight:600;margin-bottom:0.5rem;'>📦 ENTREGABLES AUDITORÍA</p>", unsafe_allow_html=True)
         try:
             ruta_confluencia = Path("Matriz_Confluencia_Auditoria_IA.xlsx")
             if ruta_confluencia.exists():

@@ -96,29 +96,145 @@ html, body, [class*="css"] {
 .dot-red    { background: var(--danger); color: var(--danger); }
 
 .cid-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 1.2rem 0 0.6rem 0;
+  display: flex; align-items: center; gap: 16px;
+  padding: 1.2rem 0 0.8rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
 }
 
-.cid-logo {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  border-radius: 6px;
+.cid-logo-wrapper {
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; flex-shrink: 0;
-  box-shadow: 0 2px 12px rgba(94,106,210,0.35);
+  flex-shrink: 0;
+  background: rgba(94,106,210,0.1);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(94,106,210,0.3);
+  box-shadow: 0 4px 20px rgba(94,106,210,0.25);
 }
 
 .cid-title {
-  font-size: 1.4rem; font-weight: 600;
+  font-size: 1.5rem; font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.5px;
   margin: 0;
 }
 
 .cid-subtitle {
-  font-size: 0.82rem; color: var(--text-tertiary);
-  margin: 0; letter-spacing: 0.02em;
+  font-size: 0.85rem; color: var(--text-tertiary);
+  margin: 2px 0 0 0; letter-spacing: 0.02em;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  margin-bottom: 12px;
+}
+
+.sidebar-brand-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-brand-title {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.sidebar-brand-sub {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-standard);
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.user-avatar {
+  font-size: 1.2rem;
+  background: rgba(94, 106, 210, 0.2);
+  border: 1px solid rgba(94, 106, 210, 0.4);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: -0.2px;
+}
+
+.user-role {
+  font-size: 0.78rem;
+  color: #d0d6e0 !important;
+  font-weight: 500;
+}
+
+/* ── Estilos Integrados para st.chat_input (Caja de Entrada de Chat) ── */
+[data-testid="stChatInput"],
+.stChatInputContainer,
+div[data-baseweb="input"] {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-standard) !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+}
+
+[data-testid="stChatInput"] textarea,
+.stChatInputContainer textarea {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  font-size: 0.92rem !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder,
+.stChatInputContainer textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+  background-color: var(--bg-canvas) !important;
+}
+
+.cid-login-container {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-standard);
+  border-radius: 12px;
+  margin: 40px auto;
+  max-width: 480px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.cid-login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 
 .badge {
