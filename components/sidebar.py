@@ -61,16 +61,19 @@ def render_sidebar(nombre, usuario, authenticator):
             for display, route in items:
                 is_active = (route == current_route)
                 key = f"nav_btn_{route}"
+                wrapper_class = "nav-btn-active-wrapper" if is_active else "nav-btn-wrapper"
 
+                st.markdown(f"<div class='{wrapper_class}'>", unsafe_allow_html=True)
                 if st.button(
                     display,
                     key=key,
-                    type="primary" if is_active else "secondary",
+                    type="secondary",
                     use_container_width=True,
                 ):
                     st.session_state["_last_menu"] = route
                     st.session_state["_nav_display"] = display
                     st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
             if group_idx < len(MENU_GROUPS) - 1:
                 st.markdown("<div class='nav-group-divider'></div>", unsafe_allow_html=True)
