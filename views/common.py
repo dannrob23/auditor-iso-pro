@@ -69,3 +69,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from datetime import datetime, timezone, timedelta
+
+BOGOTA_OFFSET = timedelta(hours=-5)
+
+def ahora_bogota():
+    return datetime.now(timezone.utc) + BOGOTA_OFFSET

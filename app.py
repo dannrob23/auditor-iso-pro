@@ -8,12 +8,6 @@ RIESGO_COLORS = {
     "BAJO":    {"bg": "rgba(52,211,153,0.18)", "text": "#34d399", "border": "rgba(52,211,153,0.45)", "hex": "#34d399"},
 }
 
-# Zona horaria Bogotá, Colombia (UTC-5)
-BOGOTA_OFFSET = timedelta(hours=-5)
-
-def ahora_bogota():
-    return datetime.now(timezone.utc) + BOGOTA_OFFSET
-
 init_db()
 load_dotenv()
 
