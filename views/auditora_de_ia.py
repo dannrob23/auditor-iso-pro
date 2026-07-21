@@ -1,6 +1,7 @@
 from views.common import *
 from services.analysis_service import analyze_pdf_policy
 from core import llm_factory
+from pdf_export import generar_informe_auditoria_profesional
 extraer_texto_pdf = llm_factory.extraer_texto_pdf
 ejecutar_gap_analysis = llm_factory.ejecutar_gap_analysis
 
