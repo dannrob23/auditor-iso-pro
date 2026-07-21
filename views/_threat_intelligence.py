@@ -162,7 +162,6 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
             if st.button("📥 Generar Excel de Riesgos (con datos)", type="primary", key="btn_gen_excel"):
                 from openpyxl import Workbook
                 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-                from datetime import datetime
                 import tempfile, os
                 
                 wb = Workbook()
