@@ -34,6 +34,7 @@ def _construir_llm(proveedor: str, modelo_llm: str, temp: float):
 
 
 def extraer_texto_pdf(archivo) -> str:
+    archivo.seek(0)
     lector = pypdf.PdfReader(io.BytesIO(archivo.read()))
     texto = ""
     for pagina in lector.pages:
