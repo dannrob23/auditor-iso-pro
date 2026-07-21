@@ -51,7 +51,7 @@ FALLBACK_DIR.joinpath("uploads").mkdir(exist_ok=True)
 _KB_REPO = os.getenv("KB_REPO", "").strip()
 
 def sincronizar_fuentes_oficiales():
-    """Descarga PDFs desde un repositorio de GitHub a knowledge_base/."""
+    """Descarga PDFs, TXTs y DOCXs desde un repositorio de GitHub a knowledge_base/."""
     if not _KB_REPO or "/" not in _KB_REPO:
         return 0
     owner, repo = _KB_REPO.split("/", 1)
@@ -64,6 +64,8 @@ def sincronizar_fuentes_oficiales():
         import requests
     except Exception:
         return 0
+
+    EXT_VALIDAS = {".pdf", ".txt", ".docx"}
 
     try:
         url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
@@ -78,7 +80,8 @@ def sincronizar_fuentes_oficiales():
             if item.get("type") != "file":
                 continue
             name = item.get("name", "")
-            if not name.lower().endswith(".pdf"):
+            ext = Path(name).suffix.lower()
+            if ext not in EXT_VALIDAS:
                 continue
             destino = KB_DIR / name
             if destino.exists():
@@ -87,9 +90,9 @@ def sincronizar_fuentes_oficiales():
             if not raw_url:
                 continue
             try:
-                pdf_r = requests.get(raw_url, headers=headers, timeout=60)
-                if pdf_r.status_code == 200:
-                    destino.write_bytes(pdf_r.content)
+                r_file = requests.get(raw_url, headers=headers, timeout=60)
+                if r_file.status_code == 200:
+                    destino.write_bytes(r_file.content)
                     descargados += 1
             except Exception:
                 continue
