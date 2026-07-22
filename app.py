@@ -16,15 +16,14 @@ from core.logo import get_logo_html, get_logo_base64
 def _obtener_kb_dir():
     return Path("knowledge_base")
 
-@st.cache_resource
 def _auto_descargar_fuentes():
     kb = _obtener_kb_dir()
-    if kb.exists() and any(kb.glob("*.pdf")):
-        indexar_documentos()
-        return True
     from rag_knowledge import sincronizar_fuentes_oficiales
     n = sincronizar_fuentes_oficiales()
     if n > 0:
+        indexar_documentos()
+        return True
+    if kb.exists() and any(kb.glob("*.pdf")):
         indexar_documentos()
         return True
     url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
