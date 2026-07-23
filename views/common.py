@@ -22,10 +22,18 @@ from database import (
     guardar_vulnerabilidad, limpiar_vulnerabilidades_antiguas, exportar_excel_respaldo,
     crear_auditoria, obtener_auditorias, obtener_auditoria, actualizar_auditoria,
 )
-from pdf_export import (
-    generar_pdf,
-    generar_pdf_propuesta_interoperabilidad,
-)
+try:
+    from pdf_export import (  # type: ignore[import-untyped]
+        generar_pdf,
+        generar_pdf_propuesta_interoperabilidad,
+    )
+except Exception:
+    # Fallback si pdf_export no carga (caché de Streamlit Cloud)
+    def generar_pdf(*args, **kwargs):
+        return b""
+    def generar_pdf_propuesta_interoperabilidad(*args, **kwargs):
+        return b""
+    print("[Warning] pdf_export no disponible - exportación PDF limitada")
 from guia_auditoria import (
     ETAPAS, SECTORES_EMPRESA, TAMANOS_EMPRESA,
     obtener_controles_recomendados, generar_plan_implementacion,
