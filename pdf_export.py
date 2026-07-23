@@ -117,7 +117,7 @@ def generar_pdf_propuesta_interoperabilidad(
         fontSize=12, textColor=COLOR_GRAY_TEXT,
         alignment=TA_CENTER, spaceAfter=4,
     )
-    story.append(Paragraph("🧩 Propuesta de Implementación IA-SEC", title_style))
+    story.append(Paragraph("AuditAI Pro — Propuesta de Implementación", title_style))
     story.append(Paragraph("ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894 para Infraestructuras Críticas", sub_style))
     story.append(HRFlowable(width="100%", thickness=2, color=COLOR_PURPLE, spaceAfter=12))
 
@@ -166,11 +166,11 @@ def generar_pdf_propuesta_interoperabilidad(
 
     resumen_data = [
         ["Estado de Implementación", "Cantidad", "Porcentaje"],
-        ["✅ Cumplimiento total", str(c_total), f"{c_total/total_eval*100:.1f}%"],
-        ["🟢 Mayormente implementado", str(c_mayor), f"{c_mayor/total_eval*100:.1f}%"],
-        ["🟡 Implementado parcialmente", str(c_parcial), f"{c_parcial/total_eval*100:.1f}%"],
-        ["🟠 En proceso inicial", str(c_inicial), f"{c_inicial/total_eval*100:.1f}%"],
-        ["❌ No iniciado", str(c_no), f"{c_no/total_eval*100:.1f}%"],
+        ["[OK] Cumplimiento total", str(c_total), f"{c_total/total_eval*100:.1f}%"],
+        ["[ALTO] Mayormente implementado", str(c_mayor), f"{c_mayor/total_eval*100:.1f}%"],
+        ["[MEDIO] Implementado parcialmente", str(c_parcial), f"{c_parcial/total_eval*100:.1f}%"],
+        ["[BAJO] En proceso inicial", str(c_inicial), f"{c_inicial/total_eval*100:.1f}%"],
+        ["[CRITICO] No iniciado", str(c_no), f"{c_no/total_eval*100:.1f}%"],
     ]
     resumen_table = Table(resumen_data, colWidths=[9*cm, 3*cm, 4*cm])
     resumen_table.setStyle(TableStyle([
@@ -216,8 +216,8 @@ def generar_pdf_propuesta_interoperabilidad(
         "footer", fontSize=7, textColor=COLOR_GRAY_TEXT, alignment=TA_CENTER,
     )
     story.append(Paragraph(
-        f"Generado por IA-SEC Auditor Tool · ISO 19011:2018 + ISO 23894:2023 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · "
-        f"Este documento es confidencial y para uso interno de la organización.",
+        f"AuditAI Pro — ISO 19011:2018 + ISO 23894:2023 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · "
+        f"Documento confidencial para uso interno de la organización.",
         footer_style,
     ))
 
@@ -698,7 +698,7 @@ def generar_informe_auditoria_profesional(
         f"<i>Generado con IA ({proveedor}). No reemplaza una auditoría formal certificada.</i>", ds))
     story.append(HRFlowable(width="100%", thickness=1, color=COLOR_PURPLE, spaceBefore=6))
     fl = ParagraphStyle("fl", fontSize=7, textColor=COLOR_GRAY_TEXT, alignment=TA_CENTER)
-    story.append(Paragraph(f"IA-SEC Auditor ISO 27001 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · Confidencial", fl))
+    story.append(Paragraph(f"AuditAI Pro · ISO 27001:2022 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · Confidencial", fl))
 
     doc.build(story)
     return buffer.getvalue()
