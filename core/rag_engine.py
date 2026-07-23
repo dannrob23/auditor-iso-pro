@@ -53,8 +53,8 @@ class RAGEngine:
         self._index: faiss.Index | None = None
         self._metadata: list[dict] = []
         self._active = False
-        self._provider = "deepseek"  # Default: DeepSeek (ya tienes API key)
-        self._dim = 2048  # DeepSeek embedding dimension
+        self._provider = "tfidf"  # TF-IDF local (sin API, sin costo)
+        self._dim = 5000  # TF-IDF max_features
         self._stats = {"chunks": 0, "sources": [], "size_mb": 0}
         self._lock = threading.Lock()
 
@@ -86,20 +86,13 @@ class RAGEngine:
             True si el índice está activo, False si falló
         """
         with self._lock:
-            # Verificar API key
-            api_key = os.getenv("DEEPSEEK_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
-            if not api_key:
-                print("[RAG] No hay API key para embeddings. RAG desactivado.")
-                self._active = False
-                return False
-
             # Cargar desde caché si existe y no se fuerza re-indexación
             if not force and self._load_cache():
                 print(f"[RAG] Índice cargado desde caché: {self._stats}")
                 return True
 
             # Indexar desde PDFs
-            print("[RAG] Indexando documentos...")
+            print("[RAG] Indexando documentos con TF-IDF (sin API)...")
             chunks = load_and_chunk_pdfs(kb_dir)
             if not chunks:
                 print("[RAG] No hay chunks para indexar.")
