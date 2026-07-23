@@ -141,7 +141,7 @@ COMPETENCIAS_AUDITOR_IA = [
         "como_obtenerlo": "Curso de fundamentos de IA, taller de auditoría de algoritmos, lectura de ISO 23894"
     },
     {
-        "area": "Infraestructura crítica",
+        "area": "Seguridad de la información",
         "descripcion": "Sectores priorizados por CONPES 3995 (salud, finanzas, energía, telecomunicaciones, transporte)",
         "nivel_requerido": "Medio",
         "como_obtenerlo": "Estudio del CONPES 3995/4144, familiarización con regulaciones sectoriales"
@@ -303,8 +303,7 @@ def mostrar_rol_auditor():
         st.markdown("Estos seis principios son **obligatorios** para cualquier auditoría de sistemas de gestión, incluyendo IA.")
         for p in PRINCIPIOS_AUDITORIA:
             with st.expander(f"**{p['principio']}**"):
-                st.markdown(f"{p['descripcion']}")
-                st.info(f"**Aplicación en IC:** {p['aplicacion_ic']}")
+                st.info(f"**Aplicación:** {p['aplicacion_ic']}")
 
     with tab_rol[1]:
         st.markdown("### Ciclo de Auditoría — ISO 19011 Cláusula 6")
@@ -317,7 +316,7 @@ def mostrar_rol_auditor():
                 st.markdown("**Entregables:**")
                 for ent in fase['entregables']:
                     st.markdown(f"- {ent}")
-                st.markdown("**Checklist para IA en IC:**")
+                st.markdown("**Checklist para IA:**")
                 for chk in fase['checklist_ia']:
                     st.markdown(f"- ✅ {chk}")
 
@@ -335,7 +334,7 @@ def mostrar_rol_auditor():
             Objetivos:
             1. Evaluar la conformidad del SGSI/SGIA con ISO 27001/42001
             2. Evaluar la gestión de riesgos de IA según ISO 23894
-            3. Identificar brechas en controles de infraestructura crítica
+            3. Identificar brechas en controles según ISO 27001 e ISO 27002
             
             Alcance:
             - Sistemas de IA: [Listar modelos críticos]

@@ -9,6 +9,8 @@ MENU_GROUPS = [
         ("💬 Chat Auditor", "Chat Auditor"),
         ("📝 Texto Libre", "Texto Libre"),
         ("🛣️ Ruta ISO 27002", "Ruta ISO 27002"),
+        ("🚨 Threat Intelligence", "🔴 Threat Intelligence"),
+        ("🧪 Autodiagnóstico", "🔬 Autodiagnóstico"),
     ]),
     ("📚 BASE DE CONOCIMIENTO & RAG", [
         ("📚 Base RAG", "Base RAG"),
@@ -23,8 +25,6 @@ MENU_GROUPS = [
         ("🎓 Rol Auditor", "Rol Auditor"),
     ]),
     ("⚙️ SISTEMA & SALUD", [
-        ("🚨 Threat Intelligence", "🔴 Threat Intelligence"),
-        ("🧪 Autodiagnóstico", "🔬 Autodiagnóstico"),
         ("📋 Logs", "Logs"),
     ]),
 ]

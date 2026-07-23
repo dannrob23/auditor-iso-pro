@@ -6,7 +6,7 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
     st.markdown("#### 🔗 Confluencia Normativa IA-SEC")
     st.markdown("**ISO 27001 + NIST AI RMF + ISO 42001 + ISO 19011 + ISO 23894** — 5 marcos integrados")
     st.markdown("""
-    Esta sección muestra cómo se integran los marcos fundamentales para la auditoría de IA en infraestructura crítica.
+    Esta sección muestra cómo se integran los marcos fundamentales para la auditoría de IA según ISO 27001, ISO 27002 y normas relacionadas.
     
     | Dimensión | ISO/IEC 27001:2022 | NIST AI RMF 1.0 | ISO/IEC 42001:2023 | ISO 19011:2018 | ISO 23894:2023 |
     | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -20,8 +20,8 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
     """)
     
     st.markdown("---")
-    st.markdown("#### 📥 Entregable Académico")
-    st.info("Descarga la matriz detallada de confluencia que articula los 5 marcos normativos para tu propuesta de auditoría de IA en infraestructura crítica.")
+    st.markdown("#### 📥 Matriz de Confluencia")
+    st.info("Descarga la matriz detallada de confluencia que articula los 5 marcos normativos para tu propuesta de auditoría de IA.")
     try:
         ruta = Path("Matriz_Confluencia_Auditoria_IA.xlsx")
         if ruta.exists():

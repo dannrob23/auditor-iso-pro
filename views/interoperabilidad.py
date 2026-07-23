@@ -10,7 +10,7 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
     # Selección de sector
     sectores_opciones = ["Selecciona un sector..."] + [f"{k}: {v['nombre']}" for k, v in SECTORES_IC.items()]
     sector_seleccionado = st.selectbox(
-        "🏭 Sector de Infraestructura Crítica",
+        "🏭 Sector",
         sectores_opciones,
         help="Selecciona el sector específico para contextualizar la evaluación"
     )
@@ -313,7 +313,7 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
                             ws0.row_dimensions[1].height = 50
 
                             ws0.merge_cells("A2:F2")
-                            ws0["A2"] = "Auditoría de Ciberseguridad e Inteligencia Artificial en Infraestructura Crítica"
+                            ws0["A2"] = "Auditoría de Ciberseguridad e Inteligencia Artificial"
                             ws0["A2"].font = sub_font
                             ws0["A2"].fill = dark_fill
                             ws0["A2"].alignment = Alignment(horizontal="center")

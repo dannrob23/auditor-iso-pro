@@ -105,7 +105,7 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
                 st.markdown("**Uploads activos:** —")
         except Exception:
             st.markdown("**Uploads activos:** —")
-    st.info("💡 **Cómo funciona:** El sistema busca en el 'Marco de Gobernanza' (NIST/ISO42001) y en los estándares de ciberseguridad (ISO27001) para anclar la evaluación a requisitos reales de infraestructura crítica.")
+    st.info("💡 **Cómo funciona:** El sistema busca en el 'Marco de Gobernanza' (NIST/ISO42001) y en los estándares de ciberseguridad (ISO27001 e ISO 27002) para anclar la evaluación a requisitos reales de las normas.")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Tab Confluencia ──────────────────────────────────────────────────────────
