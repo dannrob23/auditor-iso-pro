@@ -474,3 +474,9 @@ div[data-baseweb="base-input"] {
 }
 
 .cid-footer strong { color: #ffffff !important; }
+
+/* ── Login centrado ──────────────────────────────────────────────────── */
+div:has(> form) {
+  max-width: 420px;
+  margin: 2.5rem auto;
+}
