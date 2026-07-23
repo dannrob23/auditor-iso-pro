@@ -3,8 +3,6 @@ credentials:
     auditor:
       email: auditor@empresa.com
       name: Auditor Líder
-      # Contraseña: Auditor2024! (hasheada con bcrypt)
-      # Para generar una nueva, ejecuta: python -c "import streamlit_authenticator as sa; print(sa.Hasher(['TuContraseña']).generate())"
       password: "$2b$12$Y3PAy3bAZ3K4ywrLmiaVNuQzor6sXF4yHX3i8JthT9oTLru.P1Yee"
     admin:
       email: admin@empresa.com
@@ -13,7 +11,7 @@ credentials:
 
 cookie:
   expiry_days: 1
-  key: "auditor_iso_cookie_key"
+  key: "Xk9mP2vL7nQ4wR8jT1yB6fH3dS5gA0eZcNuYiOxWq"
   name: "auditor_iso_session"
 
 pre-authorized:
