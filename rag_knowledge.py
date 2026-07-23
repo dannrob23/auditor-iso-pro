@@ -41,16 +41,22 @@ UPLOADS_DIR.mkdir(exist_ok=True)
 # ── 1. Extraer texto de archivos ──────────────────────────────────────────────
 
 def _extraer_texto_pdf(ruta: Path) -> str:
-    """Extrae texto de un PDF usando pypdf."""
+    """Extrae texto de un PDF usando pypdf. Ignora archivos corruptos."""
     try:
         lector = pypdf.PdfReader(str(ruta))
+        # Verificación rápida: si el PDF está corrupto, lanza error
+        num_paginas = len(lector.pages)
         texto = []
         for pagina in lector.pages:
             t = pagina.extract_text()
             if t:
                 texto.append(t)
-        return "\n".join(texto)
-    except Exception:
+        resultado = "\n".join(texto)
+        if len(resultado) < 50:  # Muy poco texto = PDF probablemente corrupto o escaneado
+            return ""
+        return resultado
+    except Exception as e:
+        print(f"[RAG] PDF ignorado (corrupto o no parseable): {ruta.name} - {e}")
         return ""
 
 
