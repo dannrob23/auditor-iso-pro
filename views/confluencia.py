@@ -23,16 +23,23 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
     st.markdown("#### 📥 Entregable Académico")
     st.info("Descarga la matriz detallada de confluencia que articula los 5 marcos normativos para tu propuesta de auditoría de IA en infraestructura crítica.")
     try:
-        with open("Matriz_Confluencia_Auditoria_IA.xlsx", "rb") as f:
-            st.download_button(
-                "⬇️ Descargar Matriz de Confluencia (Excel)",
-                data=f,
-                file_name="Matriz_Confluencia_Auditoria_IA.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="btn_matriz_conf"
-            )
-    except FileNotFoundError:
-        st.warning("Archivo Matriz_Confluencia_Auditoria_IA.xlsx no disponible.")
+        ruta = Path("Matriz_Confluencia_Auditoria_IA.xlsx")
+        if ruta.exists():
+            with open(ruta, "rb") as f:
+                st.download_button(
+                    "⬇️ Descargar Matriz de Confluencia (Excel)",
+                    data=f,
+                    file_name="Matriz_Confluencia_Auditoria_IA.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="btn_matriz_conf",
+                    type="primary",
+                    use_container_width=True,
+                )
+            st.caption("Incluye: matriz principal + descripción detallada de controles por marco normativo.")
+        else:
+            st.warning("⚠️ Archivo no disponible. Ejecuta un deploy completo para generarlo.")
+    except Exception:
+        st.warning("⚠️ Archivo Matriz_Confluencia_Auditoria_IA.xlsx no disponible.")
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Tab Interoperabilidad ─────────────────────────────────────────────────────
