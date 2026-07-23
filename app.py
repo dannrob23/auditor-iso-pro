@@ -17,19 +17,18 @@ def _obtener_kb_dir():
     return Path("knowledge_base")
 
 def _auto_descargar_fuentes():
-    """Descarga fuentes en background con timeout para no bloquear el startup."""
+    """Inicializa el motor RAG en background y sincroniza PDFs si es necesario."""
+    # Iniciar RAG en background
+    from core.rag_engine import init_rag_background
+    init_rag_background()
+    
+    # Sincronizar PDFs si no existen
     try:
         import threading
         def _descargar():
             kb = _obtener_kb_dir()
-            # Si ya hay PDFs, indexar en background y salir
             if kb.exists() and any(kb.glob("*.pdf")):
-                try:
-                    indexar_documentos()
-                except Exception:
-                    pass
                 return
-            # Intentar descarga rápida (timeout corto para no bloquear)
             url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
             try:
                 import requests, zipfile, io
@@ -41,7 +40,6 @@ def _auto_descargar_fuentes():
                             if member.endswith(".pdf"):
                                 target = kb / member.split("/")[-1]
                                 target.write_bytes(z.read(member))
-                    indexar_documentos()
             except Exception:
                 pass
         hilo = threading.Thread(target=_descargar, daemon=True)
