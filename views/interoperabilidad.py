@@ -297,17 +297,34 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
     # Descarga de la matriz completa
     st.markdown("---")
     st.markdown("### 📥 Descargas")
-    col_a, col_b = st.columns(2)
+    col_a, col_b, col_c = st.columns(3)
     with col_a:
         matriz_md = generar_markdown_matriz(sector_id)
         st.download_button(
-            "⬇️ Matriz Interoperabilidad (.md)",
+            "📄 Matriz Interoperabilidad (.md)",
             data=matriz_md,
             file_name=f"matriz_interoperabilidad{'_' + sector_id if sector_id else ''}.md",
             mime="text/markdown",
             key="matriz_md"
         )
     with col_b:
+        # Excel profesional con formato
+        df_excel = generar_df_interoperabilidad()
+        if sector_id:
+            sector_info = obtener_sector(sector_id)
+            sector_nombre = sector_info["nombre"] if sector_info else sector_id
+        else:
+            sector_nombre = "General"
+        excel_bytes = exportar_matriz_excel(df_excel)
+        st.download_button(
+            "📊 Matriz Interoperabilidad (.xlsx)",
+            data=excel_bytes,
+            file_name=f"matriz_interoperabilidad{'_' + sector_id if sector_id else ''}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="matriz_xlsx",
+            type="primary",
+        )
+    with col_c:
         st.info("💡 **Uso recomendado:** Comparte esta matriz con equipos técnicos para evaluar brechas antes de generar propuestas específicas.")
 
     st.markdown("</div>", unsafe_allow_html=True)
