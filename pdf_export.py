@@ -190,24 +190,61 @@ def generar_pdf_propuesta_interoperabilidad(
     story.append(Paragraph("Propuesta de Implementación Detallada", section_style))
 
     body_style = ParagraphStyle("body", fontSize=9, leading=12, spaceAfter=4)
+    code_style = ParagraphStyle("code", fontSize=7, leading=9, spaceAfter=2,
+                                 fontName="Courier", textColor=colors.HexColor("#555555"))
+    in_code_block = False
     for line in propuesta.splitlines():
-        if line.strip():
-            # Convertir headers Markdown a estilos
-            if line.startswith("# "):
-                story.append(Paragraph(line[2:], styles["Heading1"]))
-            elif line.startswith("## "):
-                story.append(Paragraph(line[3:], styles["Heading2"]))
-            elif line.startswith("### "):
-                story.append(Paragraph(line[4:], styles["Heading3"]))
-            elif line.startswith("- ") or line.startswith("* "):
-                story.append(Paragraph(f"• {line[2:]}", body_style))
-            elif "|" in line and not line.startswith("|"):
-                # Tabla simple
-                story.append(Paragraph(line, body_style))
-            else:
-                story.append(Paragraph(line, body_style))
-        else:
+        # Detectar bloques de código (mermaid, diagramas ASCII)
+        if line.strip().startswith("```"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue  # Saltar diagramas ASCII/mermaid
+        if not line.strip():
             story.append(Spacer(1, 0.2*cm))
+            continue
+
+        # Limpiar caracteres no imprimibles con Helvetica
+        cleaned = line
+        # Emoji y símbolos → texto plano
+        replacements = {
+            "🧩": "", "📋": "", "✅": "[OK]", "❌": "[X]", "🟢": "[OK]",
+            "🟡": "[~]", "🟠": "[!]", "🔴": "[!]", "⚠️": "[!]",
+            "■": ">", "▪": ">", "▫": ">", "►": ">", "○": "-",
+            "●": "-", "◆": ">", "◇": ">", "☑": "[x]", "□": "[ ]",
+            "↑": "^", "↓": "v", "→": "->", "←": "<-",
+            "▲": "^", "▼": "v", "▬": "-", "█": "#", "▌": "|",
+            "▐": "|", "▀": "-", "▄": "-", "▔": "-", "▁": "-",
+            "": " ", "\u200b": "", "\ufeff": "",
+        }
+        for old, new in replacements.items():
+            cleaned = cleaned.replace(old, new)
+        # Eliminar cualquier otro carácter no ASCII que no sea imprimible
+        cleaned = ''.join(c if ord(c) < 128 or c in 'áéíóúñüÁÉÍÓÚÑÜ¿¡' else ' ' for c in cleaned)
+        cleaned = cleaned.strip()
+        if not cleaned:
+            continue
+
+        # Renderizar según formato
+        if cleaned.startswith("# "):
+            story.append(Paragraph(cleaned[2:], styles["Heading1"]))
+        elif cleaned.startswith("## "):
+            story.append(Paragraph(cleaned[3:], styles["Heading2"]))
+        elif cleaned.startswith("### "):
+            story.append(Paragraph(cleaned[4:], styles["Heading3"]))
+        elif cleaned.startswith("- ") or cleaned.startswith("* "):
+            story.append(Paragraph(f"  {cleaned[2:]}", body_style))
+        elif cleaned.startswith("|") and cleaned.count("|") >= 3:
+            # Detectar tabla
+            cells = [c.strip() for c in cleaned.split("|") if c.strip()]
+            if cells and not all(c.startswith("-") for c in cells if len(c) > 0):
+                # Es una fila de tabla
+                header = " | ".join(cells)
+                story.append(Paragraph(f"<b>{header}</b>" if not any(c.isdigit() for c in cleaned.split("|")[1] if c.strip()) else header, body_style))
+            else:
+                story.append(Spacer(1, 0.1*cm))
+        else:
+            story.append(Paragraph(cleaned, body_style))
 
     # ── Pie de página ─────────────────────────────────────────────────────────
     story.append(Spacer(1, 0.5*cm))
