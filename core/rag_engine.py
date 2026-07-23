@@ -53,8 +53,8 @@ class RAGEngine:
         self._index: faiss.Index | None = None
         self._metadata: list[dict] = []
         self._active = False
-        self._provider = "openai"  # fallback a OpenAI
-        self._dim = 1536
+        self._provider = "deepseek"  # Default: DeepSeek (ya tienes API key)
+        self._dim = 2048  # DeepSeek embedding dimension
         self._stats = {"chunks": 0, "sources": [], "size_mb": 0}
         self._lock = threading.Lock()
 
@@ -86,14 +86,8 @@ class RAGEngine:
             True si el índice está activo, False si falló
         """
         with self._lock:
-            # Detectar proveedor disponible
-            api_key = os.getenv("OPENAI_API_KEY", "")
-            if not api_key:
-                api_key = os.getenv("GOOGLE_API_KEY", "")
-                if api_key:
-                    self._provider = "google"
-                    self._dim = 768
-
+            # Verificar API key
+            api_key = os.getenv("DEEPSEEK_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
             if not api_key:
                 print("[RAG] No hay API key para embeddings. RAG desactivado.")
                 self._active = False
