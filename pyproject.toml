@@ -35,3 +35,4 @@ dependencies = [
 
 [project.scripts]
 auditor-iso-pro = "app:main"
+\n[tool.ruff.lint]\nignore = ["F405", "F403", "E402", "F401", "E501", "W291"]\n\n[tool.ruff]\ntarget-version = "py311"\n
