@@ -328,6 +328,19 @@ def generar_propuesta_ic(
   - Estado actual: {est}
 """
 
+    # ── RAG: Buscar contexto normativo relevante ──
+    contexto_rag_texto = ""
+    try:
+        from core.rag_engine import get_rag
+        engine = get_rag()
+        if engine.is_active:
+            consulta = f"{sector['nombre']} {contexto_organizacion[:300]} controles de seguridad implementación"
+            ctx = engine.get_context(consulta, top_k=3)
+            if ctx:
+                contexto_rag_texto = f"\n\nContexto normativo relevante:\n{ctx}\n"
+    except Exception:
+        pass
+
     # Construir el LLM
     if proveedor == "Google (Gemini)":
         api_key = os.getenv("GOOGLE_API_KEY")
@@ -416,8 +429,8 @@ La propuesta debe ser específica para {sector['nombre']} y alineada con los cin
 - **Privacidad**: Fuga de datos sensibles desde los modelos
 - **Impacto social**: Efectos en confianza pública y equidad
 - **Seguridad física**: Daños por fallos en IA en entornos críticos
-
-Genera la propuesta de implementación completa siguiendo la metodología ISO 19011:2018."""
+{contexto_rag_texto}
+Genera la propuesta de implementación completa siguiendo la metodología ISO 19011:2018. Fundamenta tus recomendaciones en el contexto normativo disponible."""
 
     mensajes = [
         SystemMessage(content=system_prompt),
