@@ -639,29 +639,94 @@ def mostrar_autodiagnostico():
         else:
             st.markdown("### 📄 Propuesta de Implementación")
             st.markdown(st.session_state.auto_propuesta)
-            col_md, col_pdf = st.columns(2)
+            col_md, col_xls, col_pdf = st.columns(3)
             with col_md:
                 st.download_button(
-                    "⬇️ Descargar (.md)",
-                    data=st.session_state.auto_propuesta,
+                    "📄 .md", data=st.session_state.auto_propuesta,
                     file_name="autodiagnostico_propuesta.md",
-                    mime="text/markdown",
-                    key="dl_auto_prop_md"
-                )
+                    mime="text/markdown", key="dl_auto_prop_md",
+                    use_container_width=True)
+            with col_xls:
+                try:
+                    from openpyxl import Workbook
+                    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+                    import tempfile, os
+
+                    wb = Workbook()
+                    thin_border = Border(left=Side(style="thin", color="334155"), right=Side(style="thin", color="334155"),
+                                         top=Side(style="thin", color="334155"), bottom=Side(style="thin", color="334155"))
+                    dark_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
+                    accent_fill = PatternFill(start_color="0f3460", end_color="0f3460", fill_type="solid")
+                    header_fill = PatternFill(start_color="16213e", end_color="16213e", fill_type="solid")
+                    title_font = Font(name="Century Gothic", size=16, bold=True, color="FFFFFF")
+                    header_font = Font(name="Century Gothic", size=9, bold=True, color="FFFFFF")
+                    data_font = Font(name="Century Gothic", size=8, color="E0E0E0")
+
+                    # Portada
+                    ws = wb.active
+                    ws.title = "Portada"
+                    ws.merge_cells("A1:F1")
+                    ws["A1"] = "PROPUESTA DE IMPLEMENTACIÓN — AUTODIAGNÓSTICO"
+                    ws["A1"].font = title_font; ws["A1"].fill = dark_fill
+                    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+                    ws.row_dimensions[1].height = 45
+
+                    meta = [
+                        ("Sector", st.session_state.get("auto_sector", "General")),
+                        ("Empresa", st.session_state.get("auto_empresa", "No especificada")),
+                        ("Nivel Madurez", f"{st.session_state.get('auto_puntaje_global', 0)}%"),
+                        ("Fecha", __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M")),
+                    ]
+                    for i, (label, val) in enumerate(meta, 4):
+                        ws.cell(row=i, column=1, value=label).font = Font(name="Century Gothic", size=9, bold=True, color="58C8F2")
+                        ws.cell(row=i, column=1).fill = header_fill; ws.cell(row=i, column=1).border = thin_border
+                        ws.merge_cells(f"A{i}:B{i}")
+                        c = ws.cell(row=i, column=3, value=val)
+                        c.font = Font(name="Century Gothic", size=9, color="E0E0E0")
+                        c.fill = accent_fill; c.border = thin_border
+                        ws.merge_cells(f"C{i}:F{i}")
+
+                    # Propuesta completa
+                    ws2 = wb.create_sheet("Propuesta Completa")
+                    ws2.sheet_properties.tabColor = "58C8F2"
+                    ws2.merge_cells("A1:B1")
+                    ws2["A1"] = "PROPUESTA DE IMPLEMENTACIÓN — TEXTO COMPLETO"
+                    ws2["A1"].font = Font(name="Century Gothic", size=12, bold=True, color="FFFFFF")
+                    ws2["A1"].fill = dark_fill; ws2["A1"].alignment = Alignment(horizontal="center")
+                    ws2.row_dimensions[1].height = 30
+
+                    lines = st.session_state.auto_propuesta.split("\n")
+                    for i, line in enumerate(lines):
+                        r = 3 + i
+                        ws2.merge_cells(f"A{r}:B{r}")
+                        ws2.cell(row=r, column=1, value=line).font = Font(name="Consolas", size=7, color="E0E0E0")
+                        ws2.cell(row=r, column=1).alignment = Alignment(wrap_text=True)
+                    ws2.column_dimensions["A"].width = 100; ws2.column_dimensions["B"].width = 30
+
+                    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+                    wb.save(tmp.name); tmp.close()
+                    with open(tmp.name, "rb") as f: excel_bytes = f.read()
+                    os.unlink(tmp.name)
+
+                    st.download_button("📊 Excel + Propuesta", data=excel_bytes,
+                        file_name="autodiagnostico_propuesta.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="dl_auto_prop_xls", type="primary", use_container_width=True)
+                except Exception as e:
+                    st.caption(f"Excel no disponible: {e}")
+
             with col_pdf:
                 from pdf_export import generar_pdf_propuesta_interoperabilidad
                 try:
                     s_auto = st.session_state.get("auto_sector", "No especificado")
                     pdf_bytes = generar_pdf_propuesta_interoperabilidad(
                         st.session_state.auto_propuesta, "autodiag", s_auto,
-                        {"auto": "evaluado"}, "autodiagnostico", "IA-SEC", "autodiagnóstico"
+                        {"auto": "evaluado"}, "autodiagnostico", "AuditAI Pro", "autodiagnóstico"
                     )
                     st.download_button(
-                        "📄 Descargar PDF (ISO 19011)",
-                        data=pdf_bytes,
+                        "📄 PDF", data=pdf_bytes,
                         file_name="autodiagnostico_propuesta.pdf",
-                        mime="application/pdf",
-                        key="dl_auto_prop_pdf"
-                    )
+                        mime="application/pdf", key="dl_auto_prop_pdf",
+                        use_container_width=True)
                 except Exception as e:
                     st.caption(f"PDF no disponible: {e}")
