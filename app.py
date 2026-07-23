@@ -17,35 +17,37 @@ def _obtener_kb_dir():
     return Path("knowledge_base")
 
 def _auto_descargar_fuentes():
-    kb = _obtener_kb_dir()
-    from rag_knowledge import sincronizar_fuentes_oficiales
-    n = sincronizar_fuentes_oficiales()
-    if n > 0:
-        indexar_documentos()
-        return True
-    if kb.exists() and any(kb.glob("*.pdf")):
-        indexar_documentos()
-        return True
-    url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
+    """Descarga fuentes en background con timeout para no bloquear el startup."""
     try:
-        import requests
-    except Exception:
-        return False
-    try:
-        r = requests.get(url, timeout=60)
-        if r.status_code == 200:
-            import zipfile, io
-            kb.mkdir(exist_ok=True)
-            with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-                for member in z.namelist():
-                    if member.endswith(".pdf"):
-                        target = kb / member.split("/")[-1]
-                        target.write_bytes(z.read(member))
-            indexar_documentos()
-            return True
+        import threading
+        def _descargar():
+            kb = _obtener_kb_dir()
+            # Si ya hay PDFs, indexar en background y salir
+            if kb.exists() and any(kb.glob("*.pdf")):
+                try:
+                    indexar_documentos()
+                except Exception:
+                    pass
+                return
+            # Intentar descarga rápida (timeout corto para no bloquear)
+            url = "https://github.com/dannrob23/auditor-iso-pro/releases/download/knowledge/knowledge_base_pdfs.zip"
+            try:
+                import requests, zipfile, io
+                r = requests.get(url, timeout=15)
+                if r.status_code == 200:
+                    kb.mkdir(exist_ok=True)
+                    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+                        for member in z.namelist():
+                            if member.endswith(".pdf"):
+                                target = kb / member.split("/")[-1]
+                                target.write_bytes(z.read(member))
+                    indexar_documentos()
+            except Exception:
+                pass
+        hilo = threading.Thread(target=_descargar, daemon=True)
+        hilo.start()
     except Exception:
         pass
-    return False
 
 _auto_descargar_fuentes()
 
