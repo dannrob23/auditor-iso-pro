@@ -710,6 +710,7 @@ def _generar_pdf_autodiagnostico(resultados, propuesta, sector="", empresa=""):
         GREEN = HexColor("#16A34A")
         YELLOW = HexColor("#CA8A04")
         RED = HexColor("#DC2626")
+        CODE_BG = HexColor("#F1F5F9")
 
         story = []
         s_title = ParagraphStyle("Title", parent=styles["Title"], fontSize=20, textColor=PURPLE,
@@ -794,15 +795,75 @@ def _generar_pdf_autodiagnostico(resultados, propuesta, sector="", empresa=""):
         story.append(Paragraph("Propuesta de Implementación", s_h1))
         story.append(HRFlowable(width="100%", thickness=1, color=PURPLE, spaceAfter=8))
 
+        import re as _re
+
+        def _inline_to_html(text):
+            text = _re.sub(r'`([^`]+)`', r'<font face="Courier" size="8">\1</font>', text)
+            text = _re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', text)
+            text = _re.sub(r'(?<!\*)\*([^*]+)\*(?!\*)', r'<i>\1</i>', text)
+            text = _re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" color="#1E40AF">\1</a>', text)
+            return text
+
+        s_code = ParagraphStyle("Code", fontName="Courier", fontSize=8,
+                                textColor=DARK, leading=12, spaceAfter=6,
+                                backColor=CODE_BG, leftIndent=15, rightIndent=15,
+                                borderPadding=6)
+        s_bullet = ParagraphStyle("Bullet", fontName="Helvetica", fontSize=9.5,
+                                  textColor=DARK, leading=15, spaceAfter=3,
+                                  leftIndent=20, bulletIndent=10)
+        s_bq = ParagraphStyle("BQ", fontName="Helvetica-Oblique", fontSize=9.5,
+                              textColor=GRAY, leading=14, spaceAfter=6,
+                              leftIndent=20, rightIndent=15)
+        s_code_block = ParagraphStyle("CodeBlock", fontName="Courier", fontSize=8,
+                                      textColor=DARK, leading=11, spaceAfter=8,
+                                      backColor=CODE_BG, leftIndent=15, rightIndent=15,
+                                      borderPadding=8)
+
+        in_code = False
+        code_buffer = []
         for line in propuesta.split("\n"):
-            if line.startswith("# "):
-                story.append(Paragraph(line[2:], s_h2))
-            elif line.startswith("## "):
-                story.append(Paragraph(line[3:], s_h2))
-            elif line.strip():
-                story.append(Paragraph(line, s_body))
+            if line.startswith("```"):
+                if in_code:
+                    story.append(Paragraph("<br/>".join(code_buffer), s_code_block))
+                    code_buffer = []
+                    in_code = False
+                else:
+                    in_code = True
+                continue
+            if in_code:
+                code_buffer.append(line.replace(" ", "&nbsp;") if not line.strip() else line)
+                continue
+
+            stripped = line.strip()
+            if not stripped:
+                story.append(Spacer(1, 0.15*cm))
+                continue
+
+            if stripped == "---":
+                story.append(HRFlowable(width="100%", thickness=1, color=GRAY, spaceAfter=8, spaceBefore=4))
+            elif stripped.startswith("# ") and len(stripped) > 2:
+                story.append(Paragraph(stripped[2:], s_h1))
+            elif stripped.startswith("## ") and len(stripped) > 3:
+                story.append(Paragraph(stripped[3:], s_h2))
+            elif stripped.startswith("### ") and len(stripped) > 4:
+                story.append(Paragraph(stripped[4:], ParagraphStyle("H3", fontName="Helvetica-Bold",
+                              fontSize=10, textColor=DARK, spaceBefore=8, spaceAfter=4)))
+            elif stripped.startswith("- ") or stripped.startswith("* "):
+                text = _inline_to_html(stripped[2:])
+                story.append(Paragraph(f"<bullet>&bull;</bullet> {text}", s_bullet))
+            elif stripped[0].isdigit() and ". " in stripped[:4]:
+                text = _inline_to_html(stripped.split(". ", 1)[1])
+                story.append(Paragraph(f"<bullet>{stripped.split('. ')[0]}.</bullet> {text}", s_bullet))
+            elif stripped.startswith("> "):
+                story.append(Paragraph(_inline_to_html(stripped[2:]), s_bq))
+            elif stripped.startswith("|"):
+                cells = [c.strip() for c in stripped.split("|") if c.strip() and c.strip() != "---"]
+                if cells:
+                    has_sep = any("---" in c for c in stripped.split("|") if c.strip() and c.strip() != "---")
+                    if not has_sep:
+                        story.append(Paragraph(" | ".join(cells), s_body))
             else:
-                story.append(Spacer(1, 0.2*cm))
+                story.append(Paragraph(_inline_to_html(stripped), s_body))
 
         doc.build(story)
         return buffer.getvalue()
