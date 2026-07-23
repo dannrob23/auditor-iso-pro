@@ -423,7 +423,6 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
                             data_font = Font(name="Century Gothic", size=8, color="E0E0E0")
                             data_fill_even = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
 
-                            from interoperabilidad import obtener_controles_por_dimension, obtener_dimensiones
                             row_idx = 2
                             idx = 1
                             for dim in obtener_dimensiones():
