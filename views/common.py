@@ -33,15 +33,35 @@ from guia_auditoria import (
 )
 
 try:
-    from rag_knowledge import (
-        obtener_contexto,
-        indexar_documentos,
-        base_conocimiento_activa,
-        indexar_documentos_temporales,
-        listar_uploads,
-        limpiar_uploads,
-        base_uploads_activa,
-    )
+    from core.rag_engine import get_rag
+
+    def obtener_contexto(query: str, k: int = 4) -> str:
+        engine = get_rag()
+        return engine.get_context(query, top_k=k)
+
+    def indexar_documentos():
+        engine = get_rag()
+        ok = engine.build_index(force=True)
+        if ok:
+            stats = engine.stats
+            return stats["chunks"], f"Índice RAG reconstruido: {stats['chunks']} fragmentos de {len(stats['sources'])} fuentes."
+        return 0, "No se pudo indexar. Verifica knowledge_base/ y API key."
+
+    def base_conocimiento_activa() -> bool:
+        return get_rag().is_active
+
+    def listar_uploads():
+        return []
+
+    def limpiar_uploads():
+        return True
+
+    def base_uploads_activa():
+        return False
+
+    def indexar_documentos_temporales():
+        return 0, "Función temporal deshabilitada en RAG vía API."
+
     _RAG_AVAILABLE = True
 except Exception:
     _RAG_AVAILABLE = False
@@ -51,6 +71,14 @@ except Exception:
         return 0, 'RAG no disponible'
     def base_conocimiento_activa():
         return False
+    def listar_uploads():
+        return []
+    def limpiar_uploads():
+        return True
+    def base_uploads_activa():
+        return False
+    def indexar_documentos_temporales():
+        return 0, 'RAG no disponible'
 
 from interoperabilidad import (
     MATRIZ_INTEROPERABILIDAD, SECTORES_IC, obtener_dimensiones,
