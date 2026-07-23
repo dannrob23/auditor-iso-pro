@@ -34,7 +34,7 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
 
         if st.button("🔍 Ejecutar Gap Analysis", key="btn_pdf"):
             with st.spinner("🤖 El Auditor IA está analizando tu política... esto puede tardar 30-60 segundos."):
-                resultado, stats, pdf_bytes, _ = analyze_pdf_policy(
+                resultado, stats, pdf_bytes, excel_bytes, _ = analyze_pdf_policy(
                     archivo, proveedor, modelo, temperatura, usar_rag, usuario
                 )
 
@@ -45,33 +45,44 @@ def render(usuario, nombre, proveedor, modelo, temperatura, usar_rag, opcion_men
             st.markdown("---")
             st.markdown("## 📊 Resultados del Gap Analysis")
             st.markdown(resultado)
-            col_md, col_pdf, col_pro = st.columns(3)
+            col_md, col_pdf, col_xls, col_pro = st.columns(4)
             with col_md:
-                st.download_button("⬇️ Descargar (.md)", data=resultado,
-                    file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.md", mime="text/markdown")
+                st.download_button("📄 .md", data=resultado,
+                    file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.md", mime="text/markdown",
+                    use_container_width=True)
             with col_pdf:
-                st.download_button("📄 PDF Simple", data=pdf_bytes,
-                    file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.pdf", mime="application/pdf")
+                st.download_button("📄 PDF", data=pdf_bytes,
+                    file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.pdf", mime="application/pdf",
+                    use_container_width=True)
+            with col_xls:
+                st.download_button("📊 Excel + Fuentes RAG", data=excel_bytes,
+                    file_name=f"gap_analysis_{archivo.name.replace('.pdf','')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="xls_rag", type="primary", use_container_width=True)
             with col_pro:
                 aud_id = st.session_state.get("auditoria_actual_id")
                 aud_data = obtener_auditoria(aud_id) if aud_id else None
                 ctrls = st.session_state.get("controles_actuales", []) if st.session_state.get("controles_aid") == aud_id else None
                 plan = st.session_state.get("plan_actual", {}) if st.session_state.get("controles_aid") == aud_id else None
-                prof_bytes = generar_informe_auditoria_profesional(
-                    resultado_md=resultado,
-                    nombre_empresa=aud_data.get("nombre_empresa", archivo.name) if aud_data else archivo.name,
-                    sector=aud_data.get("sector", "") if aud_data else "",
-                    tamano_empresa=aud_data.get("tamano_empresa", "") if aud_data else "",
-                    nombre_doc=archivo.name,
-                    usuario=usuario,
-                    proveedor=proveedor,
-                    modelo=modelo,
-                    stats=stats,
-                    controles_seleccionados=ctrls if ctrls and aud_id else None,
-                    plan_implementacion=plan if plan and aud_id else None,
-                )
-                st.download_button("📄 PDF Informe Profesional", data=prof_bytes,
-                    file_name=f"informe_auditoria_{archivo.name.replace('.pdf','')}.pdf", mime="application/pdf")
+                if aud_data:
+                    prof_bytes = generar_informe_auditoria_profesional(
+                        resultado_md=resultado,
+                        nombre_empresa=aud_data.get("nombre_empresa", archivo.name) if aud_data else archivo.name,
+                        sector=aud_data.get("sector", "") if aud_data else "",
+                        tamano_empresa=aud_data.get("tamano_empresa", "") if aud_data else "",
+                        nombre_doc=archivo.name,
+                        usuario=usuario,
+                        proveedor=proveedor,
+                        modelo=modelo,
+                        stats=stats,
+                        controles_seleccionados=ctrls if ctrls and aud_id else None,
+                        plan_implementacion=plan if plan and aud_id else None,
+                    )
+                    st.download_button("📄 PDF Profesional", data=prof_bytes,
+                        file_name=f"informe_auditoria_{archivo.name.replace('.pdf','')}.pdf", mime="application/pdf",
+                        use_container_width=True)
+                else:
+                    st.info("Crea una auditoría\npara PDF profesional")
     else:
         st.markdown("</div>", unsafe_allow_html=True)
 
