@@ -5,7 +5,12 @@ y genera automáticamente una propuesta de implementación basada en ISO 19011.
 """
 import json
 import os
+import tempfile
+from datetime import datetime
 import streamlit as st
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill, Font, Alignment, Border, Side, numbers
+from openpyxl.utils import get_column_letter
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIMENSIONES Y PREGUNTAS DEL AUTODIAGNÓSTICO (basado en ISO 19011 + ISO 23894)
@@ -476,6 +481,336 @@ Formato: Markdown estructurado con emojis. Enfocado en acción y resultados medi
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# GENERACIÓN DE ENTREGABLES PROFESIONALES
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _generar_excel_autodiagnostico(resultados, propuesta, sector="", empresa=""):
+    wb = Workbook()
+    thin_border = Border(left=Side(style="thin", color="D0D5DD"), right=Side(style="thin", color="D0D5DD"),
+                         top=Side(style="thin", color="D0D5DD"), bottom=Side(style="thin", color="D0D5DD"))
+    header_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+    accent_fill = PatternFill(start_color="EFF6FF", end_color="EFF6FF", fill_type="solid")
+    white_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    green_fill = PatternFill(start_color="DCFCE7", end_color="DCFCE7", fill_type="solid")
+    yellow_fill = PatternFill(start_color="FEF9C3", end_color="FEF9C3", fill_type="solid")
+    red_fill = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")
+
+    title_font = Font(name="Calibri", size=18, bold=True, color="FFFFFF")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    data_font = Font(name="Calibri", size=10, color="1E293B")
+    meta_label_font = Font(name="Calibri", size=10, bold=True, color="1E40AF")
+    meta_val_font = Font(name="Calibri", size=10, color="334155")
+    score_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    title_align = Alignment(horizontal="center", vertical="center")
+    left_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    center_align = Alignment(horizontal="center", vertical="center")
+
+    # ── Sheet 1: Portada ──
+    ws = wb.active
+    ws.title = "Portada"
+    ws.sheet_properties.tabColor = "1E40AF"
+    for col in range(1, 8):
+        ws.column_dimensions[get_column_letter(col)].width = 18
+    ws.column_dimensions["A"].width = 25
+    ws.column_dimensions["B"].width = 45
+
+    ws.merge_cells("A1:G1")
+    c = ws["A1"]
+    c.value = "AUDITAI PRO — AUTODIAGNÓSTICO DE MADUREZ IA-SEC"
+    c.font = title_font; c.fill = header_fill; c.alignment = title_align
+    ws.row_dimensions[1].height = 50
+
+    ws.merge_cells("A2:G2")
+    c2 = ws["A2"]
+    c2.value = "ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894"
+    c2.font = Font(name="Calibri", size=10, color="94A3B8")
+    c2.fill = PatternFill(start_color="1E3A5F", end_color="1E3A5F", fill_type="solid")
+    c2.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[2].height = 25
+
+    pct = resultados["porcentaje_global"]
+    nivel = resultados["nivel_global"]
+    score_color = "16A34A" if pct >= 70 else "CA8A04" if pct >= 40 else "DC2626"
+    score_bg = "DCFCE7" if pct >= 70 else "FEF9C3" if pct >= 40 else "FEE2E2"
+
+    ws.merge_cells("A4:B4")
+    ws["A4"].value = "MADUREZ GLOBAL"
+    ws["A4"].font = meta_label_font; ws["A4"].alignment = left_align
+
+    ws.merge_cells("C4:G4")
+    c = ws["C4"]
+    c.value = f"{pct}% — {nivel}"
+    c.font = Font(name="Calibri", size=14, bold=True, color=score_color)
+    c.fill = PatternFill(start_color=score_bg, end_color=score_bg, fill_type="solid")
+    c.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[4].height = 35
+
+    meta_items = [
+        ("Sector", sector),
+        ("Empresa", empresa),
+        ("Fecha", datetime.now().strftime("%d/%m/%Y %H:%M")),
+        ("Dimensiones evaluadas", str(len(resultados["dimensiones"]))),
+    ]
+    for i, (label, val) in enumerate(meta_items, 6):
+        ws.cell(row=i, column=1, value=label).font = meta_label_font
+        ws.cell(row=i, column=1).border = thin_border
+        ws.merge_cells(f"A{i}:B{i}")
+        c = ws.cell(row=i, column=3, value=val)
+        c.font = meta_val_font; c.border = thin_border
+        ws.merge_cells(f"C{i}:G{i}")
+
+    ws.merge_cells("A11:G11")
+    ws["A11"].value = "RESUMEN POR DIMENSIÓN"
+    ws["A11"].font = Font(name="Calibri", size=12, bold=True, color="1E40AF")
+    ws["A11"].alignment = left_align
+
+    dim_headers = ["Dimensión", "Puntaje", "Máximo", "%", "Nivel"]
+    for j, h in enumerate(dim_headers, 1):
+        c = ws.cell(row=12, column=j, value=h)
+        c.font = header_font; c.fill = header_fill; c.alignment = center_align; c.border = thin_border
+
+    for row_idx, (dim_nombre, dim_res) in enumerate(resultados["dimensiones"].items(), 13):
+        dp = dim_res["porcentaje"]
+        d_fill = green_fill if dp >= 70 else yellow_fill if dp >= 40 else red_fill
+        ws.cell(row=row_idx, column=1, value=dim_nombre).font = data_font
+        ws.cell(row=row_idx, column=1).fill = d_fill; ws.cell(row=row_idx, column=1).border = thin_border
+        ws.cell(row=row_idx, column=2, value=dim_res["puntaje"]).font = data_font
+        ws.cell(row=row_idx, column=2).fill = d_fill; ws.cell(row=row_idx, column=2).border = thin_border
+        ws.cell(row=row_idx, column=2).alignment = center_align
+        ws.cell(row=row_idx, column=3, value=dim_res["maximo"]).font = data_font
+        ws.cell(row=row_idx, column=3).fill = d_fill; ws.cell(row=row_idx, column=3).border = thin_border
+        ws.cell(row=row_idx, column=3).alignment = center_align
+        ws.cell(row=row_idx, column=4, value=dp / 100).font = data_font
+        ws.cell(row=row_idx, column=4).fill = d_fill; ws.cell(row=row_idx, column=4).border = thin_border
+        ws.cell(row=row_idx, column=4).number_format = "0%"
+        ws.cell(row=row_idx, column=4).alignment = center_align
+        ws.cell(row=row_idx, column=5, value=dim_res["nivel"]).font = Font(name="Calibri", size=10, bold=True, color="1E293B")
+        ws.cell(row=row_idx, column=5).fill = d_fill; ws.cell(row=row_idx, column=5).border = thin_border
+        ws.cell(row=row_idx, column=5).alignment = center_align
+
+    # ── Sheet 2: Dimensiones ──
+    ws2 = wb.create_sheet("Dimensiones")
+    ws2.sheet_properties.tabColor = "2563EB"
+    ws2.column_dimensions["A"].width = 40
+    ws2.column_dimensions["B"].width = 14
+    ws2.column_dimensions["C"].width = 14
+    ws2.column_dimensions["D"].width = 14
+    ws2.column_dimensions["E"].width = 18
+
+    for j, h in enumerate(["Dimensión", "Puntaje", "Máximo", "%", "Nivel de Madurez"], 1):
+        c = ws2.cell(row=1, column=j, value=h)
+        c.font = header_font; c.fill = header_fill; c.alignment = center_align; c.border = thin_border
+    ws2.row_dimensions[1].height = 30
+
+    for row_idx, (dim_nombre, dim_res) in enumerate(resultados["dimensiones"].items(), 2):
+        dp = dim_res["porcentaje"]
+        d_fill = green_fill if dp >= 70 else yellow_fill if dp >= 40 else red_fill
+        ws2.cell(row=row_idx, column=1, value=dim_nombre).font = data_font
+        ws2.cell(row=row_idx, column=1).fill = d_fill; ws2.cell(row=row_idx, column=1).border = thin_border
+        ws2.cell(row=row_idx, column=2, value=dim_res["puntaje"]).font = data_font
+        ws2.cell(row=row_idx, column=2).fill = d_fill; ws2.cell(row=row_idx, column=2).border = thin_border
+        ws2.cell(row=row_idx, column=2).alignment = center_align
+        ws2.cell(row=row_idx, column=3, value=dim_res["maximo"]).font = data_font
+        ws2.cell(row=row_idx, column=3).fill = d_fill; ws2.cell(row=row_idx, column=3).border = thin_border
+        ws2.cell(row=row_idx, column=3).alignment = center_align
+        ws2.cell(row=row_idx, column=4, value=dp / 100).font = data_font
+        ws2.cell(row=row_idx, column=4).fill = d_fill; ws2.cell(row=row_idx, column=4).border = thin_border
+        ws2.cell(row=row_idx, column=4).number_format = "0%"
+        ws2.cell(row=row_idx, column=4).alignment = center_align
+        ws2.cell(row=row_idx, column=5, value=dim_res["nivel"]).font = Font(name="Calibri", size=10, bold=True, color="1E293B")
+        ws2.cell(row=row_idx, column=5).fill = d_fill; ws2.cell(row=row_idx, column=5).border = thin_border
+        ws2.cell(row=row_idx, column=5).alignment = center_align
+
+    # ── Sheet 3: Detalle Preguntas ──
+    ws3 = wb.create_sheet("Detalle Preguntas")
+    ws3.sheet_properties.tabColor = "3B82F6"
+    ws3.column_dimensions["A"].width = 10
+    ws3.column_dimensions["B"].width = 22
+    ws3.column_dimensions["C"].width = 55
+    ws3.column_dimensions["D"].width = 19
+    ws3.column_dimensions["E"].width = 14
+    ws3.column_dimensions["F"].width = 14
+
+    for j, h in enumerate(["ID", "Dimensión", "Pregunta", "Valor", "Máximo", "%"], 1):
+        c = ws3.cell(row=1, column=j, value=h)
+        c.font = header_font; c.fill = header_fill; c.alignment = center_align; c.border = thin_border
+    ws3.row_dimensions[1].height = 30
+
+    row_idx = 2
+    for dim_nombre, dim_res in resultados["dimensiones"].items():
+        for p in dim_res["preguntas"]:
+            pp = p["porcentaje"]
+            p_fill = green_fill if pp >= 70 else yellow_fill if pp >= 40 else red_fill
+            ws3.cell(row=row_idx, column=1, value=p["id"]).font = data_font
+            ws3.cell(row=row_idx, column=1).fill = p_fill; ws3.cell(row=row_idx, column=1).border = thin_border
+            ws3.cell(row=row_idx, column=1).alignment = center_align
+            ws3.cell(row=row_idx, column=2, value=dim_nombre).font = data_font
+            ws3.cell(row=row_idx, column=2).fill = p_fill; ws3.cell(row=row_idx, column=2).border = thin_border
+            ws3.cell(row=row_idx, column=3, value=p["texto"]).font = data_font
+            ws3.cell(row=row_idx, column=3).fill = p_fill; ws3.cell(row=row_idx, column=3).border = thin_border
+            ws3.cell(row=row_idx, column=3).alignment = Alignment(wrap_text=True, vertical="center")
+            ws3.cell(row=row_idx, column=4, value=p["valor"]).font = data_font
+            ws3.cell(row=row_idx, column=4).fill = p_fill; ws3.cell(row=row_idx, column=4).border = thin_border
+            ws3.cell(row=row_idx, column=4).alignment = center_align
+            ws3.cell(row=row_idx, column=5, value=p["maximo"]).font = data_font
+            ws3.cell(row=row_idx, column=5).fill = p_fill; ws3.cell(row=row_idx, column=5).border = thin_border
+            ws3.cell(row=row_idx, column=5).alignment = center_align
+            ws3.cell(row=row_idx, column=6, value=pp / 100).font = data_font
+            ws3.cell(row=row_idx, column=6).fill = p_fill; ws3.cell(row=row_idx, column=6).border = thin_border
+            ws3.cell(row=row_idx, column=6).number_format = "0%"
+            ws3.cell(row=row_idx, column=6).alignment = center_align
+            row_idx += 1
+
+    # ── Sheet 4: Propuesta ──
+    ws4 = wb.create_sheet("Propuesta")
+    ws4.sheet_properties.tabColor = "60A5FA"
+    ws4.column_dimensions["A"].width = 120
+
+    ws4.merge_cells("A1:A1")
+    ws4["A1"].value = "PROPUESTA DE IMPLEMENTACIÓN"
+    ws4["A1"].font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+    ws4["A1"].fill = header_fill; ws4["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws4.row_dimensions[1].height = 35
+
+    lines = propuesta.split("\n")
+    for i, line in enumerate(lines):
+        r = 3 + i
+        ws4.cell(row=r, column=1, value=line).font = Font(name="Calibri", size=10, color="1E293B")
+        ws4.cell(row=r, column=1).alignment = Alignment(wrap_text=True, vertical="top")
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+    wb.save(tmp.name)
+    tmp.close()
+    with open(tmp.name, "rb") as f:
+        bytes_data = f.read()
+    os.unlink(tmp.name)
+    return bytes_data
+
+
+def _generar_pdf_autodiagnostico(resultados, propuesta, sector="", empresa=""):
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import cm
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.colors import HexColor
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, PageBreak
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        from datetime import datetime
+        import io
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4,
+                                leftMargin=2*cm, rightMargin=2*cm,
+                                topMargin=2*cm, bottomMargin=2*cm)
+
+        styles = getSampleStyleSheet()
+        PURPLE = HexColor("#1E40AF")
+        DARK = HexColor("#1E293B")
+        GRAY = HexColor("#64748B")
+        GREEN = HexColor("#16A34A")
+        YELLOW = HexColor("#CA8A04")
+        RED = HexColor("#DC2626")
+
+        story = []
+        s_title = ParagraphStyle("Title", parent=styles["Title"], fontSize=20, textColor=PURPLE,
+                                 spaceAfter=6, alignment=TA_CENTER, fontName="Helvetica-Bold")
+        s_sub = ParagraphStyle("Sub", parent=styles["Normal"], fontSize=10, textColor=GRAY,
+                               alignment=TA_CENTER, spaceAfter=4)
+        s_h1 = ParagraphStyle("H1", parent=styles["Heading1"], fontSize=14, textColor=PURPLE,
+                              spaceBefore=16, spaceAfter=8, fontName="Helvetica-Bold")
+        s_h2 = ParagraphStyle("H2", parent=styles["Heading2"], fontSize=11, textColor=DARK,
+                              spaceBefore=12, spaceAfter=6, fontName="Helvetica-Bold")
+        s_body = ParagraphStyle("Body", parent=styles["Normal"], fontSize=9, textColor=DARK,
+                                leading=14, spaceAfter=4)
+        s_meta = ParagraphStyle("Meta", parent=styles["Normal"], fontSize=9, textColor=GRAY, leading=13)
+
+        story.append(Paragraph("AuditAI Pro", s_title))
+        story.append(Paragraph("Autodiagnóstico de Madurez IA-SEC", s_sub))
+        story.append(Paragraph("ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894", s_sub))
+        story.append(HRFlowable(width="100%", thickness=2, color=PURPLE, spaceAfter=12))
+        story.append(Spacer(1, 0.3*cm))
+
+        pct = resultados["porcentaje_global"]
+        nivel = resultados["nivel_global"]
+        score_color = GREEN if pct >= 70 else YELLOW if pct >= 40 else RED
+        story.append(Paragraph(f'Madurez Global: <font color="{score_color.hexval()}">{pct}% — {nivel}</font>',
+                               ParagraphStyle("Score", parent=s_h1, fontSize=18, alignment=TA_CENTER, spaceBefore=8, spaceAfter=8)))
+        story.append(Spacer(1, 0.3*cm))
+
+        meta_data = [
+            ["Sector:", sector or "No especificado"],
+            ["Empresa:", empresa or "No especificada"],
+            ["Fecha:", datetime.now().strftime("%d/%m/%Y %H:%M")],
+            ["Dimensiones:", str(len(resultados["dimensiones"]))],
+        ]
+        meta_table = Table(meta_data, colWidths=[4*cm, 12*cm])
+        meta_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (1, 0), (1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("TEXTCOLOR", (0, 0), (0, -1), PURPLE),
+            ("TEXTCOLOR", (1, 0), (1, -1), DARK),
+            ("ALIGN", (1, 0), (1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.append(meta_table)
+        story.append(Spacer(1, 0.5*cm))
+
+        story.append(Paragraph("Resultados por Dimensión", s_h1))
+        dim_header = [Paragraph("<b>Dimensión</b>", s_meta),
+                      Paragraph("<b>Puntaje</b>", s_meta),
+                      Paragraph("<b>%</b>", s_meta),
+                      Paragraph("<b>Nivel</b>", s_meta)]
+        dim_rows = [dim_header]
+        for dim_nombre, dim_res in resultados["dimensiones"].items():
+            dp = dim_res["porcentaje"]
+            sc = GREEN if dp >= 70 else YELLOW if dp >= 40 else RED
+            dim_rows.append([
+                Paragraph(dim_nombre, s_body),
+                Paragraph(f"{dim_res['puntaje']}/{dim_res['maximo']}", s_body),
+                Paragraph(f'<font color="{sc.hexval()}"><b>{dp}%</b></font>', s_body),
+                Paragraph(dim_res["nivel"], s_body),
+            ])
+
+        dim_table = Table(dim_rows, colWidths=[7*cm, 3*cm, 2.5*cm, 3.5*cm])
+        dim_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("BACKGROUND", (0, 0), (-1, 0), PURPLE),
+            ("TEXTCOLOR", (0, 0), (-1, 0), HexColor("#FFFFFF")),
+            ("ALIGN", (1, 0), (-2, -1), "CENTER"),
+            ("ALIGN", (2, 0), (2, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID", (0, 0), (-1, -1), 0.5, HexColor("#CBD5E1")),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(dim_table)
+        story.append(Spacer(1, 0.5*cm))
+
+        story.append(PageBreak())
+        story.append(Paragraph("Propuesta de Implementación", s_h1))
+        story.append(HRFlowable(width="100%", thickness=1, color=PURPLE, spaceAfter=8))
+
+        for line in propuesta.split("\n"):
+            if line.startswith("# "):
+                story.append(Paragraph(line[2:], s_h2))
+            elif line.startswith("## "):
+                story.append(Paragraph(line[3:], s_h2))
+            elif line.strip():
+                story.append(Paragraph(line, s_body))
+            else:
+                story.append(Spacer(1, 0.2*cm))
+
+        doc.build(story)
+        return buffer.getvalue()
+    except Exception:
+        return None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # INTERFAZ STREAMLIT
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -648,84 +983,30 @@ def mostrar_autodiagnostico():
                     use_container_width=True)
             with col_xls:
                 try:
-                    from openpyxl import Workbook
-                    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-                    import tempfile, os
-
-                    wb = Workbook()
-                    thin_border = Border(left=Side(style="thin", color="334155"), right=Side(style="thin", color="334155"),
-                                         top=Side(style="thin", color="334155"), bottom=Side(style="thin", color="334155"))
-                    dark_fill = PatternFill(start_color="1a1a2e", end_color="1a1a2e", fill_type="solid")
-                    accent_fill = PatternFill(start_color="0f3460", end_color="0f3460", fill_type="solid")
-                    header_fill = PatternFill(start_color="16213e", end_color="16213e", fill_type="solid")
-                    title_font = Font(name="Century Gothic", size=16, bold=True, color="FFFFFF")
-                    header_font = Font(name="Century Gothic", size=9, bold=True, color="FFFFFF")
-                    data_font = Font(name="Century Gothic", size=8, color="E0E0E0")
-
-                    # Portada
-                    ws = wb.active
-                    ws.title = "Portada"
-                    ws.merge_cells("A1:F1")
-                    ws["A1"] = "PROPUESTA DE IMPLEMENTACIÓN — AUTODIAGNÓSTICO"
-                    ws["A1"].font = title_font; ws["A1"].fill = dark_fill
-                    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
-                    ws.row_dimensions[1].height = 45
-
-                    meta = [
-                        ("Sector", st.session_state.get("auto_sector", "General")),
-                        ("Empresa", st.session_state.get("auto_empresa", "No especificada")),
-                        ("Nivel Madurez", f"{st.session_state.get('auto_puntaje_global', 0)}%"),
-                        ("Fecha", __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M")),
-                    ]
-                    for i, (label, val) in enumerate(meta, 4):
-                        ws.cell(row=i, column=1, value=label).font = Font(name="Century Gothic", size=9, bold=True, color="58C8F2")
-                        ws.cell(row=i, column=1).fill = header_fill; ws.cell(row=i, column=1).border = thin_border
-                        ws.merge_cells(f"A{i}:B{i}")
-                        c = ws.cell(row=i, column=3, value=val)
-                        c.font = Font(name="Century Gothic", size=9, color="E0E0E0")
-                        c.fill = accent_fill; c.border = thin_border
-                        ws.merge_cells(f"C{i}:F{i}")
-
-                    # Propuesta completa
-                    ws2 = wb.create_sheet("Propuesta Completa")
-                    ws2.sheet_properties.tabColor = "58C8F2"
-                    ws2.merge_cells("A1:B1")
-                    ws2["A1"] = "PROPUESTA DE IMPLEMENTACIÓN — TEXTO COMPLETO"
-                    ws2["A1"].font = Font(name="Century Gothic", size=12, bold=True, color="FFFFFF")
-                    ws2["A1"].fill = dark_fill; ws2["A1"].alignment = Alignment(horizontal="center")
-                    ws2.row_dimensions[1].height = 30
-
-                    lines = st.session_state.auto_propuesta.split("\n")
-                    for i, line in enumerate(lines):
-                        r = 3 + i
-                        ws2.merge_cells(f"A{r}:B{r}")
-                        ws2.cell(row=r, column=1, value=line).font = Font(name="Consolas", size=7, color="E0E0E0")
-                        ws2.cell(row=r, column=1).alignment = Alignment(wrap_text=True)
-                    ws2.column_dimensions["A"].width = 100; ws2.column_dimensions["B"].width = 30
-
-                    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-                    wb.save(tmp.name); tmp.close()
-                    with open(tmp.name, "rb") as f: excel_bytes = f.read()
-                    os.unlink(tmp.name)
-
-                    st.download_button("📊 Excel + Propuesta", data=excel_bytes,
-                        file_name="autodiagnostico_propuesta.xlsx",
+                    res = st.session_state.auto_resultados
+                    excel_bytes = _generar_excel_autodiagnostico(
+                        res, st.session_state.auto_propuesta,
+                        st.session_state.get("auto_sector", ""),
+                        st.session_state.get("auto_empresa", ""),
+                    )
+                    st.download_button("📊 Excel Profesional", data=excel_bytes,
+                        file_name=f"autodiagnostico_{datetime.now().strftime('%Y%m%d')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key="dl_auto_prop_xls", type="primary", use_container_width=True)
                 except Exception as e:
                     st.caption(f"Excel no disponible: {e}")
 
             with col_pdf:
-                from pdf_export import generar_pdf_propuesta_interoperabilidad
                 try:
-                    s_auto = st.session_state.get("auto_sector", "No especificado")
-                    pdf_bytes = generar_pdf_propuesta_interoperabilidad(
-                        st.session_state.auto_propuesta, "autodiag", s_auto,
-                        {"auto": "evaluado"}, "autodiagnostico", "AuditAI Pro", "autodiagnóstico"
+                    res = st.session_state.auto_resultados
+                    pdf_bytes = _generar_pdf_autodiagnostico(
+                        res, st.session_state.auto_propuesta,
+                        st.session_state.get("auto_sector", ""),
+                        st.session_state.get("auto_empresa", ""),
                     )
                     st.download_button(
-                        "📄 PDF", data=pdf_bytes,
-                        file_name="autodiagnostico_propuesta.pdf",
+                        "📄 PDF Profesional", data=pdf_bytes,
+                        file_name=f"autodiagnostico_{datetime.now().strftime('%Y%m%d')}.pdf",
                         mime="application/pdf", key="dl_auto_prop_pdf",
                         use_container_width=True)
                 except Exception as e:
