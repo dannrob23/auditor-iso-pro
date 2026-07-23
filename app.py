@@ -191,7 +191,7 @@ if opcion_menu == "Logs":
 st.markdown(f"""
 <div class='cid-footer'>
   <strong>CID Auditor</strong> v2.0 — Auditoría ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894<br>
-  &copy; {datetime.now().year} &middot; CID INFOSEC &middot; ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894<br>
+  &copy; {datetime.now().year} &middot; CID INFOSEC &middot; Todos los derechos reservados<br>
   <span style='font-size:0.68rem;'>Confidencial &middot; Uso interno autorizado</span>
 </div>
 """, unsafe_allow_html=True)
