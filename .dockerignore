@@ -1,12 +1,8 @@
 __pycache__/
 *.pyc
 .env
-venv/
 .git/
-.gitignore
-README.md
+venv/
+knowledge_base_pdfs/
+*.pdf
 *.zip
-logs/
-data/reportes.db
-data/faiss_index/
-data/rag_fallback/
