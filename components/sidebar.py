@@ -36,8 +36,8 @@ def render_sidebar(nombre, usuario, authenticator):
         <div class='sidebar-brand'>
             <div class='sidebar-brand-icon-wrapper'>{logo_img}</div>
             <div>
-                <div class='sidebar-brand-title'>AuditAI Pro</div>
-                <div class='sidebar-brand-sub'>Plataforma de Auditoría & IA</div>
+                <div class='sidebar-brand-title'>CID Auditor</div>
+                <div class='sidebar-brand-sub'>Powered by CID INFOSEC</div>
             </div>
         </div>
         """, unsafe_allow_html=True)

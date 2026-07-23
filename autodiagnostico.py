@@ -516,7 +516,7 @@ def _generar_excel_autodiagnostico(resultados, propuesta, sector="", empresa="")
 
     ws.merge_cells("A1:G1")
     c = ws["A1"]
-    c.value = "AUDITAI PRO — AUTODIAGNÓSTICO DE MADUREZ IA-SEC"
+    c.value = "CID AUDITOR — AUTODIAGNÓSTICO DE MADUREZ IA-SEC"
     c.font = title_font; c.fill = header_fill; c.alignment = title_align
     ws.row_dimensions[1].height = 50
 
@@ -725,7 +725,7 @@ def _generar_pdf_autodiagnostico(resultados, propuesta, sector="", empresa=""):
                                 leading=14, spaceAfter=4)
         s_meta = ParagraphStyle("Meta", parent=styles["Normal"], fontSize=9, textColor=GRAY, leading=13)
 
-        story.append(Paragraph("AuditAI Pro", s_title))
+        story.append(Paragraph("CID Auditor", s_title))
         story.append(Paragraph("Autodiagnóstico de Madurez IA-SEC", s_sub))
         story.append(Paragraph("ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894", s_sub))
         story.append(HRFlowable(width="100%", thickness=2, color=PURPLE, spaceAfter=12))

@@ -27,7 +27,7 @@ _auto_descargar_fuentes()
 # ── Configuración de página ──────────────────────────────────────────────────
 _icon_img = "assets/logo.png" if Path("assets/logo.png").exists() else "🛡️"
 st.set_page_config(
-    page_title="AuditAI Pro | Auditoría de Ciberseguridad e IA",
+    page_title="CID Auditor | Auditoría ISO 27001 · 42001 · NIST AI RMF",
     page_icon=_icon_img,
     layout="wide",
     initial_sidebar_state="expanded",
@@ -59,8 +59,8 @@ if st.session_state.get("authentication_status") is None:
     st.markdown(f"""
     <div class='cid-login-container'>
         <div class='cid-login-logo'>{logo_login_html}</div>
-        <h1 class='cid-login-title'>AuditAI Pro</h1>
-        <p class='cid-login-subtitle'>Plataforma de Auditoría de Ciberseguridad e Inteligencia Artificial</p>
+        <h1 class='cid-login-title'>CID Auditor</h1>
+        <p class='cid-login-subtitle'>Auditoría ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
         <div class='cid-login-frameworks'>
             ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894
         </div>
@@ -85,8 +85,8 @@ st.markdown(f"""
 <div class='cid-header'>
     <div class='cid-logo-wrapper'>{header_logo_html}</div>
     <div>
-        <h1 class='cid-title'>AuditAI Pro</h1>
-        <p class='cid-subtitle'>Plataforma Enterprise &middot; ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894</p>
+        <h1 class='cid-title'>CID Auditor</h1>
+        <p class='cid-subtitle'>Auditoría ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894</p>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -94,7 +94,7 @@ st.markdown(f"""
 # ── Breadcrumb dinámico ─────────────────────────────────────────────────────
 st.markdown(f"""
 <div class='breadcrumb'>
-  <span class='breadcrumb-item'>AuditAI Pro</span>
+  <span class='breadcrumb-item'>CID Auditor</span>
   <span class='breadcrumb-sep'>/</span>
   <span class='breadcrumb-item active'>{opcion_menu}</span>
 </div>
@@ -190,8 +190,8 @@ if opcion_menu == "Logs":
 # ── Footer CID INFOSEC (visible en todas las pantallas) ────────────────────
 st.markdown(f"""
 <div class='cid-footer'>
-  <strong>AuditAI Pro</strong> v2.0 — Plataforma de Auditoría de Ciberseguridad e Inteligencia Artificial<br>
-  &copy; {datetime.now().year} &middot; AuditAI Pro Inc. &middot; ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894<br>
+  <strong>CID Auditor</strong> v2.0 — Auditoría ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894<br>
+  &copy; {datetime.now().year} &middot; CID INFOSEC &middot; ISO 27001 &middot; ISO 42001 &middot; NIST AI RMF &middot; ISO 19011 &middot; ISO 23894<br>
   <span style='font-size:0.68rem;'>Confidencial &middot; Uso interno autorizado</span>
 </div>
 """, unsafe_allow_html=True)

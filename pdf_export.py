@@ -117,7 +117,7 @@ def generar_pdf_propuesta_interoperabilidad(
         fontSize=12, textColor=COLOR_GRAY_TEXT,
         alignment=TA_CENTER, spaceAfter=4,
     )
-    story.append(Paragraph("AuditAI Pro — Propuesta de Implementación", title_style))
+    story.append(Paragraph("CID Auditor — Propuesta de Implementación", title_style))
     story.append(Paragraph("ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894 para Infraestructuras Críticas", sub_style))
     story.append(HRFlowable(width="100%", thickness=2, color=COLOR_PURPLE, spaceAfter=12))
 
@@ -253,7 +253,7 @@ def generar_pdf_propuesta_interoperabilidad(
         "footer", fontSize=7, textColor=COLOR_GRAY_TEXT, alignment=TA_CENTER,
     )
     story.append(Paragraph(
-        f"AuditAI Pro — ISO 19011:2018 + ISO 23894:2023 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · "
+        f"CID Auditor — ISO 19011:2018 + ISO 23894:2023 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · "
         f"Documento confidencial para uso interno de la organización.",
         footer_style,
     ))
@@ -735,7 +735,7 @@ def generar_informe_auditoria_profesional(
         f"<i>Generado con IA ({proveedor}). No reemplaza una auditoría formal certificada.</i>", ds))
     story.append(HRFlowable(width="100%", thickness=1, color=COLOR_PURPLE, spaceBefore=6))
     fl = ParagraphStyle("fl", fontSize=7, textColor=COLOR_GRAY_TEXT, alignment=TA_CENTER)
-    story.append(Paragraph(f"AuditAI Pro · ISO 27001:2022 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · Confidencial", fl))
+    story.append(Paragraph(f"CID Auditor · ISO 27001:2022 · {datetime.now().strftime('%d/%m/%Y %H:%M')} · Confidencial", fl))
 
     doc.build(story)
     return buffer.getvalue()

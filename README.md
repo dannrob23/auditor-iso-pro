@@ -1,5 +1,5 @@
 ---
-title: AuditAI Pro
+title: CID Auditor
 emoji: 🛡️
 colorFrom: indigo
 colorTo: blue
@@ -9,7 +9,7 @@ app_file: app.py
 pinned: false
 ---
 
-# AuditAI Pro
+# CID Auditor
 
 Plataforma de Auditoría de Ciberseguridad e Inteligencia Artificial.
 ISO 27001 · ISO 42001 · NIST AI RMF · ISO 19011 · ISO 23894
