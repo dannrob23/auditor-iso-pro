@@ -1,59 +1,41 @@
 """
-Embeddings via API para RAG.
-Genera vectores usando DeepSeek API (compatible con OpenAI embeddings).
-SIN torch, SIN sentence-transformers, SIN modelos locales.
-Costo: DEEPSEEK_API_KEY ya la tienes configurada.
+Embeddings para RAG.
+Usa TF-IDF (sklearn) por defecto — sin API, sin costo, sin torch.
+Opcional: OpenAI text-embedding-3-small si está configurado.
 """
 import os
 import time
 import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-def _get_deepseek_embeddings(texts: list[str], model: str = "deepseek-chat") -> np.ndarray:
-    """
-    Genera embeddings vía DeepSeek API (compatible con OpenAI).
-    DeepSeek no cobra extra por embeddings — mismo costo que chat normal.
-    """
-    import openai
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("DEEPSEEK_API_KEY no configurada. RAG no disponible.")
-
-    client = openai.OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
-
-    batch_size = 100
-    all_vectors = []
-
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i:i + batch_size]
-        batch_clean = [t[:30000] for t in batch]
-
-        for intento in range(3):
-            try:
-                resp = client.embeddings.create(input=batch_clean, model=model)
-                vectors = [item.embedding for item in resp.data]
-                all_vectors.extend(vectors)
-                break
-            except Exception as e:
-                if intento < 2:
-                    time.sleep(2 ** intento)
-                else:
-                    raise RuntimeError(f"Embeddings DeepSeek fallaron: {e}")
-
-    if not all_vectors:
-        raise RuntimeError("No se generaron embeddings.")
-
-    result = np.array(all_vectors, dtype=np.float32)
-    # Normalizar L2 para cosine similarity
+def _get_tfidf_vectors(texts: list[str]) -> np.ndarray:
+    """Genera vectores TF-IDF localmente (sin API, sin costo)."""
+    if not texts:
+        return np.array([], dtype=np.float32)
+    vectorizer = TfidfVectorizer(
+        max_features=5000,
+        stop_words=["el", "la", "los", "las", "de", "del", "en", "y", "a", "que",
+                     "es", "por", "con", "para", "un", "una", "su", "al", "lo",
+                     "como", "más", "pero", "sus", "le", "ya", "este", "entre",
+                     "todo", "esta", "sin", "son", "ser", "ha", "dos", "tiene",
+                     "también", "era", "muy", "ese", "sino", "cada", "les",
+                     "puede", "todos", "cual", "sea", "ello", "durante", "así",
+                     "sí", "ello", "este", "otro", "eso", "ni", "no", "se"],
+        min_df=1,
+        max_df=0.85,
+        sublinear_tf=True,
+    )
+    matrix = vectorizer.fit_transform(texts)
+    # Convertir a dense y normalizar para cosine similarity
+    result = matrix.toarray().astype(np.float32)
     norms = np.linalg.norm(result, axis=1, keepdims=True)
     norms[norms == 0] = 1
     return result / norms
 
 
-# ── Proveedores alternativos (fallback) ──
-
 def _get_openai_embeddings(texts: list[str], model: str = "text-embedding-3-small") -> np.ndarray:
-    """Fallback: embeddings vía OpenAI API."""
+    """Embeddings vía OpenAI API. Solo si hay OPENAI_API_KEY."""
     from openai import OpenAI
     api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key:
@@ -83,85 +65,45 @@ def _get_openai_embeddings(texts: list[str], model: str = "text-embedding-3-smal
     return result / norms
 
 
-def _get_google_embeddings(texts: list[str]) -> np.ndarray:
-    """Fallback: embeddings vía Google Gemini API."""
-    import google.genai as genai
-    api_key = os.getenv("GOOGLE_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("GOOGLE_API_KEY no configurada.")
-    client = genai.Client(api_key=api_key)
-
-    batch_size = 100
-    all_vectors = []
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i:i + batch_size]
-        for intento in range(3):
-            try:
-                resp = client.models.embed_content(model="text-embedding-004", contents=batch)
-                for item in resp.embeddings:
-                    all_vectors.append(item.values)
-                break
-            except Exception as e:
-                if intento < 2:
-                    time.sleep(2 ** intento)
-                else:
-                    raise RuntimeError(f"Embeddings Google fallaron: {e}")
-
-    result = np.array(all_vectors, dtype=np.float32)
-    norms = np.linalg.norm(result, axis=1, keepdims=True)
-    norms[norms == 0] = 1
-    return result / norms
-
-
 # ── Router principal ──
 
 def get_embeddings(texts: list[str], provider: str | None = None) -> np.ndarray:
     """
-    Genera embeddings para una lista de textos.
+    Genera vectores para una lista de textos.
     
-    Orden de preferencia:
-    1. DeepSeek (ya tienes API key, no paga extra)
-    2. OpenAI (fallback si no hay DeepSeek)
-    3. Google (fallback si no hay OpenAI)
+    Prioridad:
+    1. OpenAI (si hay OPENAI_API_KEY) — embeddings semánticos (mejor calidad)
+    2. TF-IDF local (siempre disponible) — palabras clave (sin costo)
 
     Args:
         texts: Lista de textos a vectorizar
-        provider: Forzar proveedor ("deepseek", "openai", "google"). 
-                  Si es None, autodetecta.
+        provider: "openai", "tfidf", o None (autodetecta)
 
     Returns:
         np.ndarray float32 normalizado (L2).
-
-    Raises:
-        RuntimeError: si no hay API key configurada.
     """
     if not texts:
         return np.array([], dtype=np.float32)
 
     errores = []
 
-    if provider == "deepseek" or (provider is None and os.getenv("DEEPSEEK_API_KEY")):
-        try:
-            return _get_deepseek_embeddings(texts)
-        except Exception as e:
-            errores.append(f"DeepSeek: {e}")
-
-    if provider == "openai" or (provider is None and os.getenv("OPENAI_API_KEY")):
+    # Intentar OpenAI si hay key y no se forzó TF-IDF
+    if provider != "tfidf" and os.getenv("OPENAI_API_KEY"):
         try:
             return _get_openai_embeddings(texts)
         except Exception as e:
             errores.append(f"OpenAI: {e}")
 
-    if provider == "google" or (provider is None and os.getenv("GOOGLE_API_KEY")):
-        try:
-            return _get_google_embeddings(texts)
-        except Exception as e:
-            errores.append(f"Google: {e}")
+    # TF-IDF local (siempre funciona, sin costo)
+    if provider != "openai":
+        print("[Embeddings] Usando TF-IDF local (sin API)")
+        return _get_tfidf_vectors(texts)
 
-    raise RuntimeError(f"No hay API key configurada para embeddings. Intentos: {'; '.join(errores)}")
+    raise RuntimeError(f"No se pudieron generar embeddings. {'; '.join(errores)}")
 
 
-def embedding_dim(provider: str = "deepseek") -> int:
-    """Dimensión de los vectores según el proveedor."""
-    dims = {"deepseek": 2048, "openai": 1536, "google": 768}
-    return dims.get(provider, 2048)
+def embedding_dim(provider: str = "tfidf") -> int:
+    """Dimensión de los vectores. TF-IDF usa max_features=5000."""
+    if provider == "openai":
+        return 1536
+    return 5000  # TF-IDF default max_features
