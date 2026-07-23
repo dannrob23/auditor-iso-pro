@@ -131,12 +131,26 @@ def analizar_vulnerabilidad(fuente: str, texto_reporte: dict | str, max_retries:
     else:
         report_text = str(texto_reporte)
 
+    # ── RAG: Buscar controles ISO relevantes para esta vulnerabilidad ──
+    contexto_rag = ""
+    try:
+        from core.rag_engine import get_rag
+        engine = get_rag()
+        if engine.is_active:
+            consulta = f"{fuente} vulnerabilidad de seguridad controles ISO mitigación"
+            ctx = engine.get_context(consulta, top_k=3)
+            if ctx:
+                contexto_rag = f"\n\nContexto normativo relevante (ISO) para aplicar a esta vulnerabilidad:\n{ctx}\n"
+    except Exception:
+        pass
+
     user_prompt = (
         f"Fuente: {fuente}\n"
         f"Reporte de vulnerabilidad:\n{report_text}\n\n"
         "Normaliza este reporte siguiendo el esquema JSON especificado. "
         "Pon especial atención en asignar probabilidad_base (1-5), severidad_tecnica (1-5), "
         "y la lista de normas_aplicables concretas."
+        f"{contexto_rag}"
     )
 
     for attempt in range(max_retries):
