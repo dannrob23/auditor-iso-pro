@@ -1,0 +1,5 @@
+[tool.ruff.lint]
+ignore = ["F405", "F403", "E402", "F401", "E501", "W291"]
+
+[tool.ruff]
+target-version = "py311"
